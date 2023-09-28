@@ -470,9 +470,9 @@ function withRoutes<Routes>() {
 }
 
 export function createOpenboxClient<Routes>(
-  { baseUrl, endpoints }: { baseUrl: string; endpoints: OpenboxEndpoints<Routes> },
+  { baseUrl, endpoints, fetchImpl }: { baseUrl: string; endpoints: OpenboxEndpoints<Routes>; fetchImpl?: typeof fetch },
 ): ReturnType<typeof withRoutes<Routes>> {
-  const api = new ClientApi(baseUrl, endpoints);
+  const api = new ClientApi(baseUrl, endpoints, fetchImpl);
   // deno-lint-ignore no-explicit-any
   return api.path.bind(api) as any;
 }
