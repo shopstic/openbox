@@ -77,6 +77,11 @@ type OpenboxServerErrorHandler = (
   name?: string,
 ) => Response;
 
+type OpenboxServerNotFoundHandler = (
+  request: Request,
+  connInfo: Deno.ServeHandlerInfo,
+) => Response;
+
 export const createOpenboxDefaultErrorHandler = (log?: (...args: unknown[]) => void) =>
 (
   source: OpenboxRequestErrorSource,
@@ -154,6 +159,12 @@ export const createOpenboxDefaultErrorHandler = (log?: (...args: unknown[]) => v
   }
 
   assertUnreachable(type);
+};
+
+const defaultNotFoundHandler: OpenboxServerNotFoundHandler = (_request: Request, _connInfo: Deno.ServeHandlerInfo) => {
+  return new Response("Not found", {
+    status: 404,
+  });
 };
 
 type OpenboxStreamingMultipartFormData = AsyncGenerator<PartReader>;
@@ -411,10 +422,14 @@ type UnimplementedRoutes<Routes> =
   // deno-lint-ignore ban-types
   & {};
 
+const MultipartBoundaryPrefix = "boundary=";
+const ContentType = "content-type";
+
 export class OpenboxRouter<Routes> implements RouteHandlerApi {
   readonly endpoints: OpenboxEndpoints<Routes>;
 
   #defaultErrorHandler: OpenboxServerErrorHandler;
+  #notFoundHandler: OpenboxServerNotFoundHandler;
   #routesByUppercasedMethodMap: Map<
     UppercasedMethodKey,
     Map<MediaTypeKey, {
@@ -429,17 +444,20 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
     {
       endpoints,
       defaultErrorHandler = createOpenboxDefaultErrorHandler(console.error.bind(console)),
+      notFoundHandler = defaultNotFoundHandler,
       // deno-lint-ignore no-unused-vars
       openapiSpecPath = "/docs/openapi",
     }: {
       endpoints: OpenboxEndpoints<Routes>;
       openapiSpecPath?: string;
       defaultErrorHandler?: OpenboxServerErrorHandler;
+      notFoundHandler?: OpenboxServerNotFoundHandler;
     },
   ) {
     this.endpoints = endpoints;
     this.#routesByUppercasedMethodMap = new Map();
     this.#defaultErrorHandler = defaultErrorHandler;
+    this.#notFoundHandler = notFoundHandler;
 
     /* const memorizedDocs = memoizePromise(() => {
       const generator = new OpenboxGenerator(registry.definitions);
@@ -559,24 +577,19 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
     return this;
   }
 
-  private notFound() {
-    return new Response("Not found", {
-      status: 404,
-    });
-  }
-
   async handle(request: Request, connInfo: Deno.ServeHandlerInfo): Promise<Response> {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const headers = request.headers;
+    const method = request.method;
 
-    const requestContentTypeParts = headers.get("content-type")?.split(";", 2);
+    const requestContentTypeParts = headers.get(ContentType)?.split(";", 2);
     const requestContentType = requestContentTypeParts?.[0].trim() ?? "";
 
-    const routes = this.#routesByUppercasedMethodMap.get(request.method)?.get(requestContentType);
+    const routes = this.#routesByUppercasedMethodMap.get(method)?.get(requestContentType);
 
     if (!routes) {
-      return this.notFound();
+      return this.#notFoundHandler(request, connInfo);
     }
 
     let matchedRoute: OpenboxServerRoute | undefined;
@@ -592,7 +605,7 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
     }
 
     if (!matchedRoute) {
-      return this.notFound();
+      return this.#notFoundHandler(request, connInfo);
     }
 
     const { pathParams, queryParams, headerParams, bodySchema } = matchedRoute;
@@ -700,14 +713,14 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
             let boundary: string;
 
             if (
-              boundaryParam === undefined || !boundaryParam.startsWith("boundary=") ||
-              ((boundary = boundaryParam.substring("boundary=".length)) && boundary.length === 0)
+              boundaryParam === undefined || !boundaryParam.startsWith(MultipartBoundaryPrefix) ||
+              ((boundary = boundaryParam.substring(MultipartBoundaryPrefix.length)) && boundary.length === 0)
             ) {
               return errorHandler(
                 OpenboxRequestErrorSource.Headers,
                 OpenboxRequestErrorType.ProtocolValidation,
                 new Error("Invalid multipart/form-data boundary"),
-                "content-type",
+                ContentType,
               );
             }
 
@@ -764,8 +777,7 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
       connInfo,
     };
 
-    const maybePromise = matchedRoute.handler(ctx, this.#responder);
-    const typedResponse = (maybePromise instanceof Promise) ? await maybePromise : maybePromise;
+    const typedResponse = await matchedRoute.handler(ctx, this.#responder);
     return typedResponse.toResponse();
   }
 
@@ -781,8 +793,12 @@ export class ServerResponse<S extends number, M extends string, D, H> implements
   toResponse(): Response {
     let body: BodyInit;
 
-    if (this.mediaType === MediaTypes.Json) {
+    const mediaType = this.mediaType;
+    if (mediaType === MediaTypes.Json) {
       body = JSON.stringify(this.data, null, 2);
+    } else if (mediaType === MediaTypes.UrlEncoded) {
+      // deno-lint-ignore no-explicit-any
+      body = new URLSearchParams(this.data as any).toString();
     } else {
       // deno-lint-ignore no-explicit-any
       body = this.data as any;
@@ -795,8 +811,8 @@ export class ServerResponse<S extends number, M extends string, D, H> implements
         : headersInit,
     );
 
-    if (!headers.get("content-type")) {
-      headers.set("content-type", this.mediaType);
+    if (!headers.has("content-type")) {
+      headers.set("content-type", mediaType);
     }
 
     return new Response(body, {

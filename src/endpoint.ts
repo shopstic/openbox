@@ -230,11 +230,13 @@ export class OpenboxEndpoints<R> {
       },
     };
 
-    if (!this.endpointByPathByMethodMap.has(config.path)) {
-      this.endpointByPathByMethodMap.set(config.path, new Map());
+    const endpointByPathByMethodMap = this.endpointByPathByMethodMap;
+
+    if (!endpointByPathByMethodMap.has(config.path)) {
+      endpointByPathByMethodMap.set(config.path, new Map());
     }
 
-    this.endpointByPathByMethodMap.get(config.path)!.set(config.method, endpoint);
+    endpointByPathByMethodMap.get(config.path)!.set(config.method, endpoint);
 
     return this;
   }

@@ -2,6 +2,7 @@ import { createOpenboxClient, OpenboxClientUnexpectedResponseError } from "../sr
 import { assert, assertEquals, assertRejects, IsEqual } from "../src/deps.test.ts";
 import { Static } from "../src/deps.ts";
 import { MediaTypes } from "../src/runtime/media_type.ts";
+import { useCustomHttpClient } from "./helper/custom_http_client.ts";
 import { debugLog } from "./helper/debug_log.ts";
 import { endpoints, UserSchema } from "./helper/test_endpoints.ts";
 import { router as testRouter } from "./helper/test_router.ts";
@@ -16,9 +17,22 @@ function checkType<T, I extends T = T>(input: I): EnsureEqual<T, typeof input> {
 Deno.test("e2e", async (t) => {
   await using server = await useServer(testRouter);
 
+  using customClient = useCustomHttpClient();
+
   const api = createOpenboxClient({
     baseUrl: `http://localhost:${server.port}`,
     endpoints,
+    fetchImpl: (input: URL | Request | string, init?: RequestInit) => {
+      // const headers = new Headers(init?.headers);
+      // headers.append("accept-encoding", "identity");
+
+      const options = {
+        ...init,
+        // headers,
+        client: customClient.client,
+      };
+      return fetch(input, options);
+    },
   });
 
   await t.step("GET /healthz", async () => {

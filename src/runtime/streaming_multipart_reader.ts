@@ -21,6 +21,12 @@ const encoder = new TextEncoder();
  * It returns `0` more input needs to be read to make the decision,
  * meaning that `buf.length` and `prefix.length` are the same.
  */
+const SPACE = " ".charCodeAt(0);
+const TAB = "\t".charCodeAt(0);
+const CR = "\r".charCodeAt(0);
+const LF = "\n".charCodeAt(0);
+const DASH = "-".charCodeAt(0);
+
 export function matchAfterPrefix(
   buf: Uint8Array,
   prefix: Uint8Array,
@@ -31,11 +37,11 @@ export function matchAfterPrefix(
   }
   const c = buf[prefix.length];
   if (
-    c === " ".charCodeAt(0) ||
-    c === "\t".charCodeAt(0) ||
-    c === "\r".charCodeAt(0) ||
-    c === "\n".charCodeAt(0) ||
-    c === "-".charCodeAt(0)
+    c === SPACE ||
+    c === TAB ||
+    c === CR ||
+    c === LF ||
+    c === DASH
   ) {
     return 1;
   }

@@ -26,7 +26,7 @@ export function extractResponseSchemaMap<C extends OpenboxRouteConfig>(
               name,
               schema,
               info: createParamInfo(name, schema),
-              check: TypeCompiler.Compile(schema),
+              check: (TypeGuard.TSchema(schema)) ? TypeCompiler.Compile(schema) : undefined,
               isSetCookieHeader: name.toLowerCase() === "set-cookie",
             };
 
