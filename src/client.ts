@@ -358,7 +358,8 @@ class ClientWithPathWithMethodWithMediaTypeApi {
   ) {}
 
   send(request?: OpenboxClientRequestContext) {
-    const { method, clientWithPath: { path, client: { baseUrl, endpoints } } } = this.clientWithPathWithMethod;
+    const { method, clientWithPath: { path, client: { baseUrl, endpoints, fetchImpl } } } =
+      this.clientWithPathWithMethod;
     const endpoint = endpoints.get(path, method);
 
     if (!endpoint) {
@@ -377,6 +378,7 @@ class ClientWithPathWithMethodWithMediaTypeApi {
       request,
       endpoint,
       mediaType,
+      fetchImpl,
     });
   }
 }
