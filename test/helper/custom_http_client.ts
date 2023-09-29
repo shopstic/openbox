@@ -1,3 +1,4 @@
+/// <reference lib="deno.unstable" />
 export function useCustomHttpClient() {
   const client = Deno.createHttpClient({
     // proxy: {

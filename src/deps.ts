@@ -1,8 +1,5 @@
+export * from "https://deno.land/x/utils@2.14.5/deps/typebox.ts";
 export * from "https://deno.land/std@0.202.0/assert/mod.ts";
-export * from "https://raw.githubusercontent.com/shopstic/typebox/0.31.15/src/typebox.ts";
-export * from "https://raw.githubusercontent.com/shopstic/typebox/0.31.15/src/compiler/index.ts";
-export { Value } from "https://raw.githubusercontent.com/shopstic/typebox/0.31.15/src/value/index.ts";
-export { TransformDecodeCheckError } from "https://raw.githubusercontent.com/shopstic/typebox/0.31.15/src/value/transform.ts";
 export { equals, indexOfNeedle, lastIndexOfNeedle, startsWith } from "https://deno.land/std@0.202.0/bytes/mod.ts";
 export { BufReader, type ReadLineResult } from "https://deno.land/std@0.202.0/io/buf_reader.ts";
 export { assert } from "https://deno.land/std@0.202.0/assert/assert.ts";
