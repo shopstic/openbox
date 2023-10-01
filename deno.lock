@@ -79,6 +79,6 @@
     "https://deno.land/x/typebox_deno@0.31.17-2/src/value/pointer.ts": "e3768e6513e2c4466c78c4816dafa4eb42865c219910221f58aa3e2246ddd41d",
     "https://deno.land/x/typebox_deno@0.31.17-2/src/value/transform.ts": "28d15232a4ec755e2c6cfb0a8e413b50bacdc81dbc3020bf15839e9a725bd033",
     "https://deno.land/x/typebox_deno@0.31.17-2/src/value/value.ts": "173557ba37d2302672b2fe91c66998f226959c856646f964b74e71a5a68c0269",
-    "https://deno.land/x/utils@2.14.5/deps/typebox.ts": "2c25e1e4a2325cee9595cc70cb0106593b5ccf951dd9236a06b04e0f8b4e3b85"
+    "https://deno.land/x/utils@2.15.1/deps/typebox.ts": "2c25e1e4a2325cee9595cc70cb0106593b5ccf951dd9236a06b04e0f8b4e3b85"
   }
 }
