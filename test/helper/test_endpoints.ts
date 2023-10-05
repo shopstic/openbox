@@ -1,4 +1,4 @@
-import { FormatRegistry, Kind, Type, TypeRegistry } from "../../src/deps.ts";
+import { FormatRegistry, Kind, Maybe, NonEmptyString, Type, TypeRegistry } from "../../src/deps.ts";
 import { defineOpenboxEndpoint, defineOpenboxJsonEndpoint, OpenboxEndpoints } from "../../src/endpoint.ts";
 
 const BinaryReadableStream = Type.Unsafe<ReadableStream<Uint8Array>>({
@@ -140,6 +140,7 @@ const updateUserByIdEndpoint = defineOpenboxJsonEndpoint({
     headers: {
       "x-some-uuid": Type.String({ format: "uuid" }),
       "x-some-date": DateTime,
+      "x-optional": Maybe(NonEmptyString()),
     },
     body: UserSchema,
   },

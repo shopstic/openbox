@@ -255,7 +255,7 @@ async function openapiFetch({ baseUrl, pathTemplate, method, request, mediaType,
         const headerName = param.name;
         const headerValue = parseParam(
           param,
-          param.isSetCookieHeader ? responseHeaders.getSetCookie() : responseHeaders.get(headerName),
+          param.isSetCookieHeader ? responseHeaders.getSetCookie() : responseHeaders.get(headerName) ?? undefined,
         );
 
         try {

@@ -672,7 +672,7 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
 
     if (headerParams) {
       for (const param of headerParams) {
-        const parsed = parseParam(param, headers.get(param.name));
+        const parsed = parseParam(param, headers.get(param.name) ?? undefined);
 
         try {
           validatedHeaders.push([param.name, param.check ? param.check.Decode(parsed) : parsed]);

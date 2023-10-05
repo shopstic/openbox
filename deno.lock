@@ -32,6 +32,7 @@
     "https://deno.land/std@0.202.0/assert/mod.ts": "37c49a26aae2b254bbe25723434dc28cd7532e444cf0b481a97c045d110ec085",
     "https://deno.land/std@0.202.0/assert/unimplemented.ts": "d56fbeecb1f108331a380f72e3e010a1f161baa6956fd0f7cf3e095ae1a4c75a",
     "https://deno.land/std@0.202.0/assert/unreachable.ts": "4600dc0baf7d9c15a7f7d234f00c23bca8f3eba8b140286aaca7aa998cf9a536",
+    "https://deno.land/std@0.202.0/async/deferred.ts": "42790112f36a75a57db4a96d33974a936deb7b04d25c6084a9fa8a49f135def8",
     "https://deno.land/std@0.202.0/bytes/bytes_list.ts": "ecf5098c230b793970f43c06e8f30d70b937c031658365aeb3de9a8ae4d406a3",
     "https://deno.land/std@0.202.0/bytes/concat.ts": "d26d6f3d7922e6d663dacfcd357563b7bf4a380ce5b9c2bbe0c8586662f25ce2",
     "https://deno.land/std@0.202.0/bytes/copy.ts": "939d89e302a9761dcf1d9c937c7711174ed74c59eef40a1e4569a05c9de88219",
@@ -79,6 +80,12 @@
     "https://deno.land/x/typebox_deno@0.31.17-2/src/value/pointer.ts": "e3768e6513e2c4466c78c4816dafa4eb42865c219910221f58aa3e2246ddd41d",
     "https://deno.land/x/typebox_deno@0.31.17-2/src/value/transform.ts": "28d15232a4ec755e2c6cfb0a8e413b50bacdc81dbc3020bf15839e9a725bd033",
     "https://deno.land/x/typebox_deno@0.31.17-2/src/value/value.ts": "173557ba37d2302672b2fe91c66998f226959c856646f964b74e71a5a68c0269",
-    "https://deno.land/x/utils@2.16.1/deps/typebox.ts": "2c25e1e4a2325cee9595cc70cb0106593b5ccf951dd9236a06b04e0f8b4e3b85"
+    "https://deno.land/x/utils@2.16.1/deps/typebox.ts": "2c25e1e4a2325cee9595cc70cb0106593b5ccf951dd9236a06b04e0f8b4e3b85",
+    "https://deno.land/x/utils@2.16.1/typebox_utils.ts": "f7bbb0a78d77e2fed9251dad333ae5420bfb94a7497f44baea3fba6d415a2eeb",
+    "https://esm.sh/type-plus@7.6.0": "8b1621275a6ac44b84cf93f5319d23cebdc5e0a58e353f5e95503c21e4e5b3c1",
+    "https://esm.sh/v132/is-buffer@2.0.5/denonext/is-buffer.mjs": "87d027d2c668d773b7037bd49fc1c12ed6af26b9f176aacf338c7901237b8867",
+    "https://esm.sh/v132/tersify@3.12.1/denonext/tersify.mjs": "9f93d2660b017a234d3e4db840e8ab655b605bbdcd46ff380c5c6c7750b15c01",
+    "https://esm.sh/v132/type-plus@7.6.0/denonext/type-plus.mjs": "b040bff7f82f9ab0fae53c44b1cad26346392db03ebe6e329ffce4acdef10f31",
+    "https://esm.sh/v132/unpartial@1.0.5/denonext/unpartial.mjs": "e619813bffd895d31b5ee803e533eacb2e6c4c7f5cdba2516ac132c36dbf5966"
   }
 }

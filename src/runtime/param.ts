@@ -148,9 +148,9 @@ function getUnionInfo(
   for (const memberSchema of schema.anyOf) {
     // allows nested unions
     const fieldInfo = createParamInfo(null, memberSchema, withinArray);
-    if (fieldInfo.isNullable || TypeGuard.TUndefined(memberSchema) || TypeGuard.TNull(memberSchema)) {
+    if (fieldInfo.isNullable) {
       isNullable = true;
-    } else {
+    } else if (!TypeGuard.TUndefined(memberSchema) && !TypeGuard.TNull(memberSchema)) {
       if (fieldType === undefined) {
         fieldType = fieldInfo.type;
       } else if (fieldType !== fieldInfo.type) {
@@ -226,7 +226,7 @@ function getDefaultValue(info: ParamInfo): unknown {
 
 export function parseParam(
   param: OpenboxParam,
-  values: (FormDataEntryValue | undefined | null)[] | (FormDataEntryValue | undefined | null),
+  values: (FormDataEntryValue | undefined)[] | (FormDataEntryValue | undefined),
 ) {
   const info = param.info;
   const type = info.type;
