@@ -140,6 +140,7 @@ const updateUserByIdEndpoint = defineOpenboxJsonEndpoint({
     headers: {
       "x-some-uuid": Type.String({ format: "uuid" }),
       "x-some-date": DateTime,
+      "x-optional": Type.Union([Type.String(), Type.Undefined()]),
     },
     body: UserSchema,
   },

@@ -148,7 +148,7 @@ function getUnionInfo(
   for (const memberSchema of schema.anyOf) {
     // allows nested unions
     const fieldInfo = createParamInfo(null, memberSchema, withinArray);
-    if (fieldInfo.isNullable) {
+    if (fieldInfo.isNullable || TypeGuard.TUndefined(memberSchema) || TypeGuard.TNull(memberSchema)) {
       isNullable = true;
     } else {
       if (fieldType === undefined) {
