@@ -1,5 +1,8 @@
-import { FormatRegistry, Kind, Type, TypeRegistry } from "../src/deps.ts";
+import { Kind, Maybe, NonEmptyString, PosInt, Type, TypeRegistry } from "../src/deps.ts";
 import { defineOpenboxEndpoint, defineOpenboxJsonEndpoint, OpenboxEndpoints } from "../src/endpoint.ts";
+import { OpenboxSchemaRegistry } from "../src/registry.ts";
+
+export const schemaRegistry = new OpenboxSchemaRegistry();
 
 const BinaryReadableStream = Type.Unsafe<ReadableStream<Uint8Array>>({
   [Kind]: "BinaryReadableStream",
@@ -9,14 +12,6 @@ const BinaryReadableStream = Type.Unsafe<ReadableStream<Uint8Array>>({
 
 TypeRegistry.Set(BinaryReadableStream[Kind], (_, value) => value instanceof ReadableStream);
 
-const Uuid = /^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-
-export function IsUuid(value: string): boolean {
-  return Uuid.test(value);
-}
-
-FormatRegistry.Set("uuid", IsUuid);
-
 const FormFileSchema = Type.Unsafe<File | Blob>({
   [Kind]: "FormFile",
   type: "string",
@@ -25,47 +20,70 @@ const FormFileSchema = Type.Unsafe<File | Blob>({
 
 TypeRegistry.Set(FormFileSchema[Kind], (_, value) => value instanceof File || value instanceof Blob);
 
-export const DateTime = Type.Date();
-export const UserSchema = Type.Object({
-  id: Type.Number({ minimum: 1, maximum: 9999 }), // zsNumber(z.number().int().min(1).max(9999)).openapi({ example: 1212121 }),
-  name: Type.String(), // z.string().openapi({ example: "John Doe" }),
-  age: Type.Number({ minimum: 1, maximum: 200 }), // z.number().min(1).max(200).openapi({ example: 42 }),
-  gender: Type.Union([Type.Literal("male"), Type.Literal("female"), Type.Literal("unknown")]),
-  weapon: Type.Union([
-    Type.Object({ type: Type.Literal("a"), a: Type.String() }),
-    Type.Object({ type: Type.Literal("b"), b: Type.String() }),
+export const DateTime = Type.Unsafe<Date>(
+  Type.Transform(NonEmptyString({ format: "date-time" }))
+    .Decode((value) => new Date(value))
+    .Encode((value) => value.toISOString()),
+);
+export const UserSchema = schemaRegistry.register(
+  "User",
+  Type.Object({
+    id: Type.Number({ minimum: 1, maximum: 9999 }), // zsNumber(z.number().int().min(1).max(9999)).openapi({ example: 1212121 }),
+    name: Type.String(), // z.string().openapi({ example: "John Doe" }),
+    age: Type.Number({ minimum: 1, maximum: 200 }), // z.number().min(1).max(200).openapi({ example: 42 }),
+    gender: Type.Union([Type.Literal("male"), Type.Literal("female"), Type.Literal("unknown")]),
+    weapon: Type.Union([
+      Type.Object({ type: Type.Literal("a"), a: Type.String() }),
+      Type.Object({ type: Type.Literal("b"), b: Type.String() }),
+    ]),
+  }),
+);
+
+export const ResumeSchema = schemaRegistry.register(
+  "Resume",
+  Type.Object({
+    name: Type.String(), // z.string().openapi({ example: "John Doe" }),
+    age: Type.Number({ minimum: 1, maximum: 200 }), // z.number().min(1).max(200).openapi({ example: 42 }),
+    gender: Type.Union([Type.Literal("male"), Type.Literal("female"), Type.Literal("unknown")]),
+    hobbies: Type.Array(Type.String()),
+  }),
+);
+
+export const ResumeWithFileSchema = schemaRegistry.register(
+  "ResumeWithFile",
+  Type.Intersect([
+    ResumeSchema,
+    Type.Object({
+      resumeFile: Type.Optional(FormFileSchema),
+    }),
   ]),
-});
+);
 
-export const ResumeSchema = Type.Object({
-  name: Type.String(), // z.string().openapi({ example: "John Doe" }),
-  age: Type.Number({ minimum: 1, maximum: 200 }), // z.number().min(1).max(200).openapi({ example: 42 }),
-  gender: Type.Union([Type.Literal("male"), Type.Literal("female"), Type.Literal("unknown")]),
-  hobbies: Type.Array(Type.String()),
-});
+export const InternalErrorSchema = schemaRegistry.register(
+  "InternalError",
+  Type.Object({
+    error: Type.Boolean(),
+    message: Type.String(),
+  }),
+);
 
-export const ResumeWithFileSchema = Type.Object({
-  ...ResumeSchema.properties,
-  resumeFile: Type.Optional(FormFileSchema),
-});
+export const NotFoundError = schemaRegistry.register(
+  "NotFoundError",
+  Type.Object({
+    error: Type.Boolean(),
+    message: Type.String(),
+  }),
+);
 
-export const InternalErrorSchema = Type.Object({
-  error: Type.Boolean(),
-  message: Type.String(),
-});
+export const FileTooLargeError = schemaRegistry.register(
+  "FileTooLargeError",
+  Type.Object({
+    error: Type.Boolean(),
+    message: Type.String(),
+  }),
+);
 
-export const NotFoundError = Type.Object({
-  error: Type.Boolean(),
-  message: Type.String(),
-});
-
-export const FileTooLargeError = Type.Object({
-  error: Type.Boolean(),
-  message: Type.String(),
-});
-
-export const PositiveIntSchema = Type.Integer({ minimum: 1 });
-export const UserIdSchema = Type.Integer({ minimum: 1, maximum: 999 });
+export const UserIdSchema = schemaRegistry.register("UserId", Type.Integer({ minimum: 1, maximum: 999 }));
 
 const alivezEndpoint = defineOpenboxEndpoint({
   method: "get",
@@ -76,15 +94,15 @@ const alivezEndpoint = defineOpenboxEndpoint({
       description: "OK",
       headers: {
         "X-RateLimit-Limit": {
-          schema: PositiveIntSchema,
+          ...PosInt(),
           description: "Request limit per hour.",
         },
         "X-RateLimit-Remaining": {
-          schema: PositiveIntSchema,
+          ...PosInt(),
           description: "The number of requests left for the time window.",
         },
         "X-RateLimit-Reset": {
-          schema: DateTime,
+          ...DateTime,
           description: "The UTC date/time at which the current rate limit window resets.",
         },
       },
@@ -106,9 +124,19 @@ const healthzEndpoint = defineOpenboxEndpoint({
   method: "get",
   path: "/healthz",
   summary: "Health check",
+  responses: {
+    200: {
+      description: "OK",
+      content: {
+        "text/plain": {
+          schema: Type.String(),
+        },
+      },
+    },
+  },
 });
 
-const probingEndpoints = new OpenboxEndpoints()
+const probingEndpoints = new OpenboxEndpoints(schemaRegistry)
   .endpoint(alivezEndpoint)
   .endpoint(healthzEndpoint);
 
@@ -135,12 +163,12 @@ const updateUserByIdEndpoint = defineOpenboxJsonEndpoint({
     },
     query: {
       dryRun: Type.Boolean(),
-      dates: Type.Optional(Type.Array(Type.Date())),
+      dates: Maybe(Type.Array(DateTime)),
     },
     headers: {
-      "x-some-uuid": Type.String({ format: "uuid" }),
+      "x-some-uuid": Type.String({ format: "uuid", description: "Some UUID" }),
       "x-some-date": DateTime,
-      "x-optional": Type.Union([Type.String(), Type.Undefined()]),
+      "x-optional": Maybe(Type.String()),
     },
     body: UserSchema,
   },
@@ -155,7 +183,12 @@ const replaceUserByIdEndpoint = defineOpenboxEndpoint({
   path: "/users/{id}",
   summary: "Update a single user",
   request: {
-    params: { id: UserIdSchema },
+    params: {
+      id: {
+        ...UserIdSchema,
+        description: "The user ID",
+      },
+    },
     query: { dryRun: Type.Boolean() },
     headers: {
       "x-some-uuid": Type.String({ format: "uuid" }),
@@ -246,7 +279,7 @@ const uploadResumeEndpoint = defineOpenboxEndpoint({
   },
 });
 
-const userEndpoints = new OpenboxEndpoints()
+const userEndpoints = new OpenboxEndpoints(schemaRegistry)
   .endpoint(updateUserByIdEndpoint)
   .endpoint(replaceUserByIdEndpoint)
   .endpoint(getUserByIdEndpoint)
@@ -272,4 +305,40 @@ const userEndpoints = new OpenboxEndpoints()
     },
   });
 
-export const endpoints = probingEndpoints.merge(userEndpoints);
+const jsonDocsEndpoint = defineOpenboxEndpoint({
+  method: "get",
+  path: "/docs/openapi_v3.1.json",
+  summary: "OpenAPI specification in JSON",
+  responses: {
+    200: {
+      description: "OpenAPI specification in JSON",
+      content: {
+        "application/json": {
+          schema: Type.Unknown(),
+        },
+      },
+    },
+  },
+});
+
+const yamlDocsEndpoint = defineOpenboxEndpoint({
+  method: "get",
+  path: "/docs/openapi_v3.1.yaml",
+  summary: "OpenAPI specification in YAML",
+  responses: {
+    200: {
+      description: "OpenAPI specification in YAML",
+      content: {
+        "application/yaml": {
+          schema: Type.Unknown(),
+        },
+      },
+    },
+  },
+});
+
+export const docsEndpoints = new OpenboxEndpoints(schemaRegistry)
+  .endpoint(jsonDocsEndpoint)
+  .endpoint(yamlDocsEndpoint);
+
+export const endpoints = probingEndpoints.merge(userEndpoints).merge(docsEndpoints);

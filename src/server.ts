@@ -1,4 +1,3 @@
-import { IsEmptyObject } from "./deps.test.ts";
 import { Kind, readerFromStreamReader, TransformDecodeCheckError, TSchema, Type } from "./deps.ts";
 import {
   ExtractRequestBodyByMediaMap,
@@ -55,7 +54,7 @@ enum OpenboxRequestErrorType {
 type OpenboxServerRouteHandler = (
   request: OpenboxServerRequestContext<unknown, unknown, unknown, unknown>,
   responder: (status: number) => RouteResponderApi,
-) => MaybePromise<ServerResponse<number, string, unknown, unknown>>;
+) => MaybePromise<ServerResponse<number, string>>;
 
 type OpenboxServerRoute = {
   config: OpenboxRouteConfig<string>;
@@ -248,16 +247,30 @@ interface RouteHandlerApi {
 class RouteResponderWithMediaTypeApi {
   constructor(readonly responder: RouteResponderApi, readonly mediaType: string) {}
 
-  body(body: BodyInit | null) {
+  body(body?: BodyInit | null) {
     return new ServerResponse(this.responder.status, this.mediaType, body, this.responder.headersInit);
   }
 }
 
 class RouteResponderApi {
+  static encodeJson(body: unknown) {
+    return JSON.stringify(body, null, 2);
+  }
+
+  static encodeUrl(body: unknown) {
+    // deno-lint-ignore no-explicit-any
+    return new URLSearchParams(body as any).toString();
+  }
+
   constructor(readonly status: number, readonly headersInit?: HeadersInit) {}
 
-  media(mediaType: string) {
+  media(mediaType: string, encoder?: (body: unknown) => BodyInit) {
     const r = new RouteResponderWithMediaTypeApi(this, mediaType);
+
+    if (encoder) {
+      return (body: unknown) => r.body(encoder(body));
+    }
+
     return r.body.bind(r);
   }
 
@@ -270,7 +283,11 @@ class RouteResponderApi {
   }
 
   get json() {
-    return this.media(MediaTypes.Json);
+    return this.media(MediaTypes.Json, RouteResponderApi.encodeJson);
+  }
+
+  get urlEncoded() {
+    return this.media(MediaTypes.UrlEncoded, RouteResponderApi.encodeUrl);
   }
 
   get text() {
@@ -346,12 +363,12 @@ function withPath<
         & ResponderWithMedia<typeof MediaTypes.Html, "html">
         & ResponderWithMedia<typeof MediaTypes.Text, "text">
         & ResponderWithMedia<typeof MediaTypes.Json, "json">
+        & ResponderWithMedia<typeof MediaTypes.UrlEncoded, "urlEncoded">
         & ResponderWithMedia<typeof MediaTypes.OctetStream, "binary">;
 
-      type WithGeneric = IsEmptyObject<BaseResponder> extends true ? {
-          media: (mediaType: ResMediaTypes) => (body: BodyInit | null) => Promise<ResUnionType>;
-        }
-        : EmptyObject;
+      type WithGeneric = {
+        media: (mediaType: ResMediaTypes) => (body: BodyInit | null) => Promise<ResUnionType>;
+      };
 
       type BaseResponderWithGeneric = BaseResponder & WithGeneric;
 
@@ -445,11 +462,8 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
       endpoints,
       defaultErrorHandler = createOpenboxDefaultErrorHandler(console.error.bind(console)),
       notFoundHandler = defaultNotFoundHandler,
-      // deno-lint-ignore no-unused-vars
-      openapiSpecPath = "/docs/openapi",
     }: {
       endpoints: OpenboxEndpoints<Routes>;
-      openapiSpecPath?: string;
       defaultErrorHandler?: OpenboxServerErrorHandler;
       notFoundHandler?: OpenboxServerNotFoundHandler;
     },
@@ -458,43 +472,6 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
     this.#routesByUppercasedMethodMap = new Map();
     this.#defaultErrorHandler = defaultErrorHandler;
     this.#notFoundHandler = notFoundHandler;
-
-    /* const memorizedDocs = memoizePromise(() => {
-      const generator = new OpenboxGenerator(registry.definitions);
-      const document = generator.generateDocument({
-        openapi: "3.0.0",
-        info: {
-          title: "Test",
-          version: "1.0.0",
-        },
-      });
-
-      return Promise.resolve(
-        new ServerResponse(200, MediaTypes.Json, document, null),
-      );
-    });
-
-    this.addRoute({
-      method: "get",
-      path: openapiSpecPath,
-      responses: {
-        200: {
-          description: "OpenAPI v3 specification",
-          content: {
-            MediaTypes.Json: {
-              schema: z.unknown(),
-            },
-          },
-        },
-      },
-    }, {
-      path: openapiSpecPath,
-      urlPattern: new URLPattern({ pathname: openapiSpecPath.replaceAll(/{([^}]+)}/g, ":$1") }),
-      errorHandler: defaultValidationErrorHandler,
-      handler() {
-        return memorizedDocs();
-      },
-    }); */
 
     if (defaultErrorHandler) {
       this.#defaultErrorHandler = defaultErrorHandler;
@@ -593,14 +570,14 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
     }
 
     let matchedRoute: OpenboxServerRoute | undefined;
-    let params: Record<string, string | undefined> | undefined;
+    let routeParams: Record<string, string | undefined> | undefined;
 
     matchedRoute = routes.byPathMap.get(pathname);
 
     if (!matchedRoute) {
       matchedRoute = routes.patternList.find((r) => r.urlPattern!.test(url));
       if (matchedRoute) {
-        params = matchedRoute.urlPattern!.exec(url)!.pathname.groups;
+        routeParams = matchedRoute.urlPattern!.exec(url)!.pathname.groups;
       }
     }
 
@@ -619,7 +596,7 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
     const validatedHeaders: [string, unknown][] = [];
 
     if (pathParams) {
-      const validatingParams = params ?? {};
+      const validatingParams = routeParams ?? {};
 
       for (const param of pathParams) {
         const parsed = parseParam(param, validatingParams[param.name]);
@@ -786,23 +763,19 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
   }
 }
 
-export class ServerResponse<S extends number, M extends string, D, H> implements TypedResponse<S, M, D, H> {
-  constructor(readonly status: S, readonly mediaType: M, readonly data: D, readonly headers: H) {
+export class ServerResponse<S extends number, M extends string>
+  implements TypedResponse<S, M, BodyInit | null | undefined, HeadersInit | null | undefined> {
+  constructor(
+    readonly status: S,
+    readonly mediaType: M,
+    readonly data: BodyInit | null | undefined,
+    readonly headers: HeadersInit | null | undefined,
+  ) {
   }
 
   toResponse(): Response {
-    let body: BodyInit;
-
     const mediaType = this.mediaType;
-    if (mediaType === MediaTypes.Json) {
-      body = JSON.stringify(this.data, null, 2);
-    } else if (mediaType === MediaTypes.UrlEncoded) {
-      // deno-lint-ignore no-explicit-any
-      body = new URLSearchParams(this.data as any).toString();
-    } else {
-      // deno-lint-ignore no-explicit-any
-      body = this.data as any;
-    }
+    const body = this.data;
 
     const headersInit = this.headers ?? undefined as HeadersInit | undefined;
     const headers = new Headers(

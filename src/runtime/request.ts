@@ -1,27 +1,31 @@
-import { TSchema, TypeCheck, TypeCompiler, TypeGuard } from "../deps.ts";
+import { TSchema, TypeCheck, TypeGuard } from "../deps.ts";
+import { OpenboxSchemaRegistry } from "../registry.ts";
 import { OpenboxRouteConfig } from "../types/spec.ts";
 import { createOpenboxForm, OpenboxForm } from "./form.ts";
 import { createOpenboxParamList, OpenboxParam } from "./param.ts";
 
 export function extractRequestQuerySchema<C extends OpenboxRouteConfig>(
+  registry: OpenboxSchemaRegistry,
   config: C,
 ): OpenboxParam[] | undefined {
   const record = config.request?.query;
-  return createOpenboxParamList(record);
+  return createOpenboxParamList(registry, record);
 }
 
 export function extractRequestParamsSchema<C extends OpenboxRouteConfig>(
+  registry: OpenboxSchemaRegistry,
   config: C,
 ): OpenboxParam[] | undefined {
   const record = config.request?.params;
-  return createOpenboxParamList(record);
+  return createOpenboxParamList(registry, record);
 }
 
 export function extractRequestHeadersSchema<C extends OpenboxRouteConfig>(
+  registry: OpenboxSchemaRegistry,
   config: C,
 ): OpenboxParam[] | undefined {
   const record = config.request?.headers;
-  return createOpenboxParamList(record);
+  return createOpenboxParamList(registry, record);
 }
 
 export type OpenboxBodySchema = {
@@ -35,6 +39,7 @@ export type OpenboxBodySchemaMap = {
 };
 
 export function extractRequestBodySchemaMap<C extends OpenboxRouteConfig>(
+  registry: OpenboxSchemaRegistry,
   config: C,
 ): OpenboxBodySchemaMap | undefined {
   const content = config.request?.body?.content;
@@ -42,15 +47,17 @@ export function extractRequestBodySchemaMap<C extends OpenboxRouteConfig>(
   if (content) {
     return Object.fromEntries(
       Object.entries(content).map(([media, { schema }]) => {
+        const derefedSchema = registry.deref(schema);
+
         return [
           media,
           {
-            schema,
+            schema: derefedSchema,
             form: ((media === "multipart/form-data" || media === "application/x-www-form-urlencoded") &&
-                TypeGuard.TObject(schema))
-              ? createOpenboxForm(schema)
+                TypeGuard.TObject(derefedSchema))
+              ? createOpenboxForm(registry, derefedSchema)
               : undefined,
-            check: (TypeGuard.TSchema(schema)) ? TypeCompiler.Compile(schema) : undefined,
+            check: (TypeGuard.TSchema(derefedSchema)) ? registry.compile(derefedSchema) : undefined,
           } satisfies OpenboxBodySchema,
         ];
       }),

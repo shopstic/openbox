@@ -18,6 +18,7 @@ import { OpenboxRouteConfig, OpenboxRouteMethod } from "./types/spec.ts";
 import { TSchema } from "./deps.ts";
 import { OpenboxParam } from "./runtime/param.ts";
 import { ResponseByStatusMap } from "./types/response.ts";
+import { OpenboxSchemaRegistry } from "./registry.ts";
 
 export type OpenboxJsonRouteConfig<P extends string = string> =
   & Pick<OpenboxRouteConfig, "method" | "summary" | "tags" | "description">
@@ -134,7 +135,6 @@ export type ExtractRequestBodyByMediaMap<Bag> = Bag extends
   ? B
   : undefined;
 
-type MethodKey = string;
 type PathKey = string;
 
 export type OpenboxExtractEndpointTypeBag<
@@ -157,7 +157,7 @@ export class OpenboxEndpoints<R> {
   static merge<A, B>(left: OpenboxEndpoints<A>, right: OpenboxEndpoints<B>): OpenboxEndpoints<A & B> {
     const leftMap = left.endpointByPathByMethodMap;
     const rightMap = right.endpointByPathByMethodMap;
-    const mergedMap = new Map<string, Map<string, OpenboxEndpoint>>();
+    const mergedMap = new Map<string, Map<OpenboxRouteMethod, OpenboxEndpoint>>();
 
     for (const [path, methodMap] of leftMap) {
       if (!mergedMap.has(path)) {
@@ -179,17 +179,24 @@ export class OpenboxEndpoints<R> {
       }
     }
 
-    return new OpenboxEndpoints(mergedMap);
+    const mergedSchemaRegistry = (left.schemaRegistry !== right.schemaRegistry)
+      ? left.schemaRegistry.merge(right.schemaRegistry)
+      : left.schemaRegistry;
+
+    return new OpenboxEndpoints(mergedSchemaRegistry, mergedMap);
   }
 
   merge<E>(other: OpenboxEndpoints<E>): OpenboxEndpoints<R & E> {
     return OpenboxEndpoints.merge(this, other);
   }
 
-  constructor(public readonly endpointByPathByMethodMap: Map<PathKey, Map<MethodKey, OpenboxEndpoint>> = new Map()) {
+  constructor(
+    public readonly schemaRegistry: OpenboxSchemaRegistry,
+    public readonly endpointByPathByMethodMap: Map<PathKey, Map<OpenboxRouteMethod, OpenboxEndpoint>> = new Map(),
+  ) {
   }
 
-  get(path: PathKey, method: MethodKey): OpenboxEndpoint | undefined {
+  get(path: PathKey, method: OpenboxRouteMethod): OpenboxEndpoint | undefined {
     return this.endpointByPathByMethodMap.get(path)?.get(method);
   }
 
@@ -220,13 +227,13 @@ export class OpenboxEndpoints<R> {
     const endpoint: OpenboxEndpoint = {
       config,
       request: {
-        query: extractRequestQuerySchema(config),
-        params: extractRequestParamsSchema(config),
-        headers: extractRequestHeadersSchema(config),
-        body: extractRequestBodySchemaMap(config),
+        query: extractRequestQuerySchema(this.schemaRegistry, config),
+        params: extractRequestParamsSchema(this.schemaRegistry, config),
+        headers: extractRequestHeadersSchema(this.schemaRegistry, config),
+        body: extractRequestBodySchemaMap(this.schemaRegistry, config),
       },
       response: {
-        body: extractResponseSchemaMap(config),
+        body: extractResponseSchemaMap(this.schemaRegistry, config),
       },
     };
 

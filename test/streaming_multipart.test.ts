@@ -2,6 +2,7 @@ import { createOpenboxClient } from "../src/client.ts";
 import { assertStringIncludes, deferred } from "../src/deps.test.ts";
 import { assert, assertEquals, assertGreater, assertLess, Static, Type } from "../src/deps.ts";
 import { defineOpenboxEndpoint, OpenboxEndpoints } from "../src/endpoint.ts";
+import { OpenboxSchemaRegistry } from "../src/registry.ts";
 import { PartReader } from "../src/runtime/streaming_multipart_reader.ts";
 import { OpenboxRouter, streamingMultipartFormData } from "../src/server.ts";
 import { debugLog } from "./helper/debug_log.ts";
@@ -16,6 +17,8 @@ import { useServer } from "./helper/use_server.ts";
   headers: Headers;
 };
  */
+
+const schemaRegistry = new OpenboxSchemaRegistry();
 const PartReadResultSchema = Type.Object({
   bytes: Type.Number(),
   exceeddedLimit: Type.Boolean(),
@@ -78,10 +81,10 @@ const streamUploadServerEndpoint = {
   },
 };
 
-const clientEndpoints = new OpenboxEndpoints()
+const clientEndpoints = new OpenboxEndpoints(schemaRegistry)
   .endpoint(streamUploadEndpoint);
 
-const serverEndpoints = new OpenboxEndpoints()
+const serverEndpoints = new OpenboxEndpoints(schemaRegistry)
   .endpoint(streamUploadServerEndpoint);
 
 type PartReadResult = Static<typeof PartReadResultSchema>;

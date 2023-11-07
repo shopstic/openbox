@@ -5,6 +5,7 @@ import { endpoints, UserSchema } from "./test_endpoints.ts";
 
 const testClient = createOpenboxClient({
   baseUrl: "http://localhost:9876",
+  // baseUrl: "https://tun.late9.com",
   endpoints,
 });
 
@@ -40,21 +41,21 @@ function checkType<T, I extends T = T>(input: I): EnsureEqual<T, typeof input> {
   return input as EnsureEqual<T, typeof input>;
 }
 
-await testFetch("GET /healthz", () => testClient("/healthz").get());
+// await testFetch("GET /healthz", () => testClient("/healthz").get());
 
-await testFetch("GET /alivez", async () => {
-  const response = await testClient("/alivez").get();
+// await testFetch("GET /alivez", async () => {
+//   const response = await testClient("/alivez").get();
 
-  if (response.mediaType === "application/json") {
-    console.log("OK", checkType<{ isOk: boolean }>(response.data).isOk);
-  } else {
-    console.log("OK", checkType<"OK">(response.data));
-  }
+//   if (response.mediaType === "application/json") {
+//     console.log("OK", checkType<{ isOk: boolean }>(response.data).isOk);
+//   } else {
+//     console.log("OK", checkType<"OK">(response.data));
+//   }
 
-  console.log("X-RateLimit-Limit", checkType<number>(response.headers["X-RateLimit-Limit"]));
+//   console.log("X-RateLimit-Limit", checkType<number>(response.headers["X-RateLimit-Limit"]));
 
-  return response;
-});
+//   return response;
+// });
 
 await testFetch("PUT /users/{id}", async () => {
   const response = await testClient("/users/{id}").put.json({

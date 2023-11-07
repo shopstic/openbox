@@ -1,4 +1,4 @@
-import { delay } from "https://deno.land/std@0.202.0/async/delay.ts";
+import { delay } from "https://deno.land/std@0.205.0/async/delay.ts";
 
 const boundary = "myboundary";
 const url = "http://localhost:9876";

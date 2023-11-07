@@ -1,4 +1,5 @@
-import { TObject, TSchema, TypeCompiler, TypeGuard } from "../deps.ts";
+import { TObject, TSchema, TypeGuard } from "../deps.ts";
+import { OpenboxSchemaRegistry } from "../registry.ts";
 import { createParamInfo, OpenboxParam, parseParam } from "./param.ts";
 
 export interface OpenboxForm<T extends TSchema = TSchema> {
@@ -9,20 +10,21 @@ export interface OpenboxForm<T extends TSchema = TSchema> {
 }
 
 export function createOpenboxForm<T extends TObject>(
+  registry: OpenboxSchemaRegistry,
   schema: T,
 ): OpenboxForm<T> {
   const paramNames = Object.keys(schema.properties);
   const params: Record<string, OpenboxParam> = Object.fromEntries(
     paramNames.map((name) => {
-      const paramSchema = schema.properties[name];
+      const paramSchema = registry.deref(schema.properties[name]);
 
       return [
         name,
         {
           name,
           schema: paramSchema,
-          info: createParamInfo(name, paramSchema),
-          check: (TypeGuard.TSchema(paramSchema)) ? TypeCompiler.Compile(paramSchema) : undefined,
+          info: createParamInfo(registry, name, paramSchema),
+          check: (TypeGuard.TSchema(paramSchema)) ? registry.compile(paramSchema) : undefined,
         } satisfies OpenboxParam,
       ];
     }),

@@ -1,10 +1,7 @@
 import { MakeUndefinedKeysOptional, ToStatusCode, TypeboxInfer } from "./utils.ts";
 
 type HeadersFromSchemas<T> = {
-  [M in Extract<keyof T, string>]: T[M] extends {
-    schema: infer Z;
-  } ? TypeboxInfer<Z, unknown>
-    : never;
+  [M in Extract<keyof T, string>]: TypeboxInfer<T[M]>;
 };
 
 type BodyFromMediaTypeMap<T> = {

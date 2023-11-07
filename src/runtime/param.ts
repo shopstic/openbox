@@ -1,27 +1,7 @@
 // Inspired by https://github.com/jtlapp/typebox-form-parser
 
-import { Kind, Optional, TArray, TLiteral, TSchema, TUnion, TypeCheck, TypeCompiler, TypeGuard } from "../deps.ts";
-
-/**
- * TypeBox types, stored in a schema's `Kind` symbol property.
- */
-enum TypeBoxType {
-  Array = "Array",
-  BigInt = "BigInt",
-  Boolean = "Boolean",
-  Date = "Date",
-  Integer = "Integer",
-  Literal = "Literal",
-  Null = "Null",
-  Number = "Number",
-  Object = "Object",
-  Record = "Record",
-  String = "String",
-  Symbol = "Symbol",
-  Tuple = "Tuple",
-  Undefined = "Undefined",
-  Union = "Union",
-}
+import { TArray, TSchema, TUnion, TypeCheck, TypeGuard } from "../deps.ts";
+import { OpenboxSchemaRegistry } from "../registry.ts";
 
 /**
  * JavaScript types to which TypeBox types correspond.
@@ -63,36 +43,39 @@ export interface OpenboxParam<T extends TSchema = TSchema> {
 }
 
 export function createParamInfo(
+  schemaRegistry: OpenboxSchemaRegistry,
   name: string | null,
   schema: TSchema,
   withinArray = false,
 ): ParamInfo {
-  const typeBoxType = schema[Kind] as TypeBoxType;
-  let type = schema.type as JavaScriptType;
+  const derefedSchema = schemaRegistry.deref(schema);
+
+  let type = derefedSchema.type as JavaScriptType;
   let memberType: JavaScriptType | null = null;
   let isNullable = false;
-  const isOptional = schema[Optional] !== undefined;
-  let defaultValue = schema.default;
+  const isOptional = TypeGuard.TOptional(derefedSchema);
+  let defaultValue = derefedSchema.default;
   const hasDefault = defaultValue !== undefined;
 
-  if (typeBoxType === TypeBoxType.Union) {
+  if (TypeGuard.TUnion(derefedSchema)) {
     [type, isNullable, memberType] = getUnionInfo(
-      schema as TUnion,
+      schemaRegistry,
+      derefedSchema,
       withinArray,
     );
-  } else if (typeBoxType === TypeBoxType.Null) {
+  } else if (TypeGuard.TNull(derefedSchema)) {
     isNullable = true;
-  } else if (typeBoxType === TypeBoxType.Literal) {
-    type = (schema as TLiteral).type as JavaScriptType;
-  } else if (typeBoxType === TypeBoxType.Date) {
+  } else if (TypeGuard.TLiteral(derefedSchema)) {
+    type = derefedSchema.type as JavaScriptType;
+  } else if (TypeGuard.TDate(derefedSchema)) {
     if (hasDefault) {
-      defaultValue = new Date(schema.default as string);
+      defaultValue = new Date(derefedSchema.default as string);
     }
-  } else if (typeBoxType === TypeBoxType.Array) {
+  } else if (TypeGuard.TArray(derefedSchema)) {
     if (withinArray) {
       throw Error("Form arrays can't themselves contain arrays");
     }
-    memberType = getArrayMemberType(schema as TArray);
+    memberType = getArrayMemberType(schemaRegistry, derefedSchema);
   }
 
   if (isNullable || isOptional) {
@@ -115,22 +98,27 @@ export function createParamInfo(
   };
 }
 
-export function createOpenboxParamList(record: Record<string, TSchema> | undefined): OpenboxParam[] | undefined {
+export function createOpenboxParamList(
+  registry: OpenboxSchemaRegistry,
+  record: Record<string, TSchema> | undefined,
+): OpenboxParam[] | undefined {
   return record
     ? Object.entries(record).map(([name, schema]) => {
+      const derefSchema = registry.deref(schema);
+
       return {
         name,
-        schema,
+        schema: derefSchema,
         isHeaderSetCookie: false,
-        info: createParamInfo(name, schema),
-        check: (TypeGuard.TSchema(schema)) ? TypeCompiler.Compile(schema) : undefined,
+        info: createParamInfo(registry, name, derefSchema),
+        check: (TypeGuard.TSchema(derefSchema)) ? registry.compile(derefSchema) : undefined,
       };
     })
     : undefined;
 }
 
-function getArrayMemberType(schema: TArray) {
-  const memberInfo = createParamInfo(null, schema.items, true);
+function getArrayMemberType(registry: OpenboxSchemaRegistry, schema: TArray) {
+  const memberInfo = createParamInfo(registry, null, schema.items, true);
   if (memberInfo.isNullable || memberInfo.isOptional) {
     throw Error("Form arrays can't contain nullable or optional members");
   }
@@ -138,6 +126,7 @@ function getArrayMemberType(schema: TArray) {
 }
 
 function getUnionInfo(
+  schemaRegistry: OpenboxSchemaRegistry,
   schema: TUnion,
   withinArray: boolean,
 ): [JavaScriptType, boolean, JavaScriptType | null] {
@@ -147,10 +136,12 @@ function getUnionInfo(
 
   for (const memberSchema of schema.anyOf) {
     // allows nested unions
-    const fieldInfo = createParamInfo(null, memberSchema, withinArray);
+    const derefedMemberSchema = schemaRegistry.deref(memberSchema);
+    const fieldInfo = createParamInfo(schemaRegistry, null, derefedMemberSchema, withinArray);
+
     if (fieldInfo.isNullable) {
       isNullable = true;
-    } else if (!TypeGuard.TUndefined(memberSchema) && !TypeGuard.TNull(memberSchema)) {
+    } else if (!TypeGuard.TUndefined(derefedMemberSchema) && !TypeGuard.TNull(derefedMemberSchema)) {
       if (fieldType === undefined) {
         fieldType = fieldInfo.type;
       } else if (fieldType !== fieldInfo.type) {
@@ -158,8 +149,9 @@ function getUnionInfo(
           "All non-null members of a union type must have the same JavaScript type",
         );
       }
-      if (fieldType === JavaScriptType.Array) {
-        const nextMemberType = getArrayMemberType(memberSchema as TArray);
+
+      if (TypeGuard.TArray(derefedMemberSchema)) {
+        const nextMemberType = getArrayMemberType(schemaRegistry, derefedMemberSchema);
         if (memberType === null) {
           memberType = nextMemberType;
         } else if (memberType !== nextMemberType) {
@@ -197,19 +189,19 @@ function parseStringValue(
       return info.defaultValue;
     }
   }
-  if (type == JavaScriptType.String) {
+  if (type === JavaScriptType.String) {
     return value;
-  } else if (type == JavaScriptType.Integer) {
+  } else if (type === JavaScriptType.Integer) {
     return parseInt(value);
-  } else if (type == JavaScriptType.Number) {
+  } else if (type === JavaScriptType.Number) {
     return parseFloat(value);
-  } else if (type == JavaScriptType.Boolean) {
+  } else if (type === JavaScriptType.Boolean) {
     return !["", "false", "off"].includes(value);
-  } else if (type == JavaScriptType.Date) {
+  } else if (type === JavaScriptType.Date) {
     return new Date(value);
-  } else if (type == JavaScriptType.Array) {
+  } else if (type === JavaScriptType.Array) {
     return parseStringValue(value, info.memberType!, info);
-  } else if (type == JavaScriptType.BigInt) {
+  } else if (type === JavaScriptType.BigInt) {
     try {
       return BigInt(value);
     } catch {
@@ -237,7 +229,7 @@ export function parseParam(
     if (values.length === 1) {
       value = parseParamValue(values[0], info.type, info);
 
-      if (info.type == JavaScriptType.Array) {
+      if (info.type === JavaScriptType.Array) {
         value = [value];
       }
     } else if (values.length !== 0) {

@@ -31,15 +31,13 @@ export interface OpenboxRequestBody {
 
 export interface OpenboxResponseConfig {
   description: string;
-  headers?: {
-    [headerName: string]: OpenboxResponseHeaderObject;
-  };
+  headers?: Record<string, TSchema>;
   links?: LinksObject;
   content: OpenboxContentObject;
 }
 
 export type OpenboxRouteConfig<P extends string = string> =
-  & Pick<OperationObject, "summary" | "tags" | "description">
+  & Pick<OperationObject, "summary" | "tags" | "description" | "operationId">
   & {
     method: OpenboxRouteMethod;
     path: P;

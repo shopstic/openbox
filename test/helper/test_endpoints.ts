@@ -1,6 +1,8 @@
-import { FormatRegistry, Kind, Maybe, NonEmptyString, Type, TypeRegistry } from "../../src/deps.ts";
+import { Kind, Maybe, NonEmptyString, Type, TypeRegistry } from "../../src/deps.ts";
 import { defineOpenboxEndpoint, defineOpenboxJsonEndpoint, OpenboxEndpoints } from "../../src/endpoint.ts";
+import { OpenboxSchemaRegistry } from "../../src/registry.ts";
 
+const schemaRegistry = new OpenboxSchemaRegistry();
 const BinaryReadableStream = Type.Unsafe<ReadableStream<Uint8Array>>({
   [Kind]: "BinaryReadableStream",
   type: "string",
@@ -8,14 +10,6 @@ const BinaryReadableStream = Type.Unsafe<ReadableStream<Uint8Array>>({
 });
 
 TypeRegistry.Set(BinaryReadableStream[Kind], (_, value) => value instanceof ReadableStream);
-
-const Uuid = /^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
-
-export function IsUuid(value: string): boolean {
-  return Uuid.test(value);
-}
-
-FormatRegistry.Set("uuid", IsUuid);
 
 export const FormFileSchema = Type.Unsafe<File | Blob>({
   [Kind]: "FormFile",
@@ -76,15 +70,15 @@ const alivezEndpoint = defineOpenboxEndpoint({
       description: "OK",
       headers: {
         "X-RateLimit-Limit": {
-          schema: PositiveIntSchema,
+          ...PositiveIntSchema,
           description: "Request limit per hour.",
         },
         "X-RateLimit-Remaining": {
-          schema: PositiveIntSchema,
+          ...PositiveIntSchema,
           description: "The number of requests left for the time window.",
         },
         "X-RateLimit-Reset": {
-          schema: DateTime,
+          ...DateTime,
           description: "The UTC date/time at which the current rate limit window resets.",
         },
       },
@@ -108,7 +102,7 @@ const healthzEndpoint = defineOpenboxEndpoint({
   summary: "Health check",
 });
 
-const probingEndpoints = new OpenboxEndpoints()
+const probingEndpoints = new OpenboxEndpoints(schemaRegistry)
   .endpoint(alivezEndpoint)
   .endpoint(healthzEndpoint);
 
@@ -246,7 +240,7 @@ const uploadResumeEndpoint = defineOpenboxEndpoint({
   },
 });
 
-const userEndpoints = new OpenboxEndpoints()
+const userEndpoints = new OpenboxEndpoints(schemaRegistry)
   .endpoint(updateUserByIdEndpoint)
   .endpoint(replaceUserByIdEndpoint)
   .endpoint(getUserByIdEndpoint)
