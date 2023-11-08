@@ -121,13 +121,18 @@ const router = new OpenboxRouter({ endpoints })
       .headers({ "some-extra-stuff": "here" })
       .media("application/pdf")(file.body);
   })
-  .path("/docs/openapi_v3.1.json").get.empty(async (_, respond) => {
-    return respond(200)
-      .media("application/json")(await memoizedOpenapiSpecJson());
-  })
-  .path("/docs/openapi_v3.1.yaml").get.empty(async (_, respond) => {
-    return respond(200)
-      .media("application/yaml")(await memoizedOpenapiSpecYaml());
+  .path("/docs/openapi_v3.1.{ext}").get.empty(async ({ params: { ext } }, respond) => {
+    if (ext === "json") {
+      return respond(200)
+        .media("application/json")(await memoizedOpenapiSpecJson());
+    }
+
+    if (ext === "yaml") {
+      return respond(200)
+        .media("application/yaml")(await memoizedOpenapiSpecYaml());
+    }
+
+    return respond(404).text(`Unsupported file extension ${ext}`);
   })
   .complete({});
 

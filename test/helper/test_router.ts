@@ -1,7 +1,29 @@
+import { stringifyYaml } from "../../src/deps.test.ts";
 import { assertExists, Static } from "../../src/deps.ts";
+import { toOpenapiSpecPaths } from "../../src/docs.ts";
+import { memoizePromise } from "../../src/runtime/utils.ts";
 import { OpenboxRouter } from "../../src/server.ts";
+import { OpenapiObject } from "../../src/types/openapi_spec.ts";
 import { debugLog } from "./debug_log.ts";
-import { endpoints, UserSchema } from "./test_endpoints.ts";
+import { endpoints, schemaRegistry, UserSchema } from "./test_endpoints.ts";
+
+function createOpenapiSpec() {
+  return {
+    info: {
+      title: "Test API",
+      version: "1.0.0",
+    },
+    openapi: "3.1.0",
+    paths: toOpenapiSpecPaths(schemaRegistry, endpoints),
+    components: schemaRegistry.toSpecSchemas(),
+  } satisfies OpenapiObject;
+}
+
+const memoizedOpenapiSpecJson = memoizePromise(() => Promise.resolve(JSON.stringify(createOpenapiSpec(), null, 2)));
+const memoizedOpenapiSpecYaml = memoizePromise(async () => {
+  const json = await memoizedOpenapiSpecJson();
+  return stringifyYaml(JSON.parse(json));
+});
 
 export const router = new OpenboxRouter({ endpoints })
   .path("/users/{id}").get.empty(({ params, connInfo }, respond) => {
@@ -80,7 +102,7 @@ export const router = new OpenboxRouter({ endpoints })
   .path("/healthz").get.empty(({ connInfo }, respond) => {
     debugLog?.("connInfo", connInfo);
 
-    return respond(200).empty();
+    return respond(200).text("");
   })
   .path("/download/{fileName}.pdf").get.empty(async ({ params }, respond) => {
     debugLog?.("fileName", params.fileName);
@@ -91,5 +113,18 @@ export const router = new OpenboxRouter({ endpoints })
     return respond(200)
       .headers({ "some-extra-stuff": "here" })
       .media("application/pdf")(file.body);
+  })
+  .path("/docs/openapi_v3.1.{ext}").get.empty(async ({ params: { ext } }, respond) => {
+    if (ext === "json") {
+      return respond(200)
+        .media("application/json")(await memoizedOpenapiSpecJson());
+    }
+
+    if (ext === "yaml") {
+      return respond(200)
+        .media("application/yaml")(await memoizedOpenapiSpecYaml());
+    }
+
+    return respond(404).text(`Unsupported file extension ${ext}`);
   })
   .complete({});

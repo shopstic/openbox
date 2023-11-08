@@ -142,6 +142,7 @@ Deno.test("e2e", async (t) => {
           message: "Expected integer to be less or equal to 999",
           path: "",
           schema: {
+            "$id": "#/components/schemas/UserId",
             maximum: 999,
             minimum: 1,
             type: "integer",
@@ -195,20 +196,27 @@ Deno.test("e2e", async (t) => {
     });
 
     await tt.step("form", async () => {
-      const res = await api("/resume").post.form({
-        headers: {
-          "x-some-uuid": "8443e041-ba6c-442c-81fa-bd0345c970c5",
-          "x-some-date": new Date(),
-        },
-        query: {
-          dryRun: true,
-        },
-        body,
-      });
+      try {
+        const res = await api("/resume").post.form({
+          headers: {
+            "x-some-uuid": "8443e041-ba6c-442c-81fa-bd0345c970c5",
+            "x-some-date": new Date(),
+          },
+          query: {
+            dryRun: true,
+          },
+          body,
+        });
 
-      assert(res.status === 413);
-      assertEquals(res.data.error, true);
-      checkType<string>(res.data.message);
+        assert(res.status === 413);
+        assertEquals(res.data.error, true);
+        checkType<string>(res.data.message);
+      } catch (e) {
+        if (e instanceof OpenboxClientUnexpectedResponseError) {
+          debugLog?.(e.body);
+        }
+        throw e;
+      }
     });
   });
 });

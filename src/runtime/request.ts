@@ -2,6 +2,7 @@ import { TSchema, TypeCheck, TypeGuard } from "../deps.ts";
 import { OpenboxSchemaRegistry } from "../registry.ts";
 import { OpenboxRouteConfig } from "../types/spec.ts";
 import { createOpenboxForm, OpenboxForm } from "./form.ts";
+import { MediaTypes } from "./media_type.ts";
 import { createOpenboxParamList, OpenboxParam } from "./param.ts";
 
 export function extractRequestQuerySchema<C extends OpenboxRouteConfig>(
@@ -53,8 +54,7 @@ export function extractRequestBodySchemaMap<C extends OpenboxRouteConfig>(
           media,
           {
             schema: derefedSchema,
-            form: ((media === "multipart/form-data" || media === "application/x-www-form-urlencoded") &&
-                TypeGuard.TObject(derefedSchema))
+            form: (media === MediaTypes.FormData || media === MediaTypes.UrlEncoded)
               ? createOpenboxForm(registry, derefedSchema)
               : undefined,
             check: (TypeGuard.TSchema(derefedSchema)) ? registry.compile(derefedSchema) : undefined,

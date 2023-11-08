@@ -1,4 +1,4 @@
-import { Kind, Maybe, NonEmptyString, PosInt, Type, TypeRegistry } from "../src/deps.ts";
+import { DateTimeString, Kind, Maybe, PosInt, Type, TypeRegistry } from "../src/deps.ts";
 import { defineOpenboxEndpoint, defineOpenboxJsonEndpoint, OpenboxEndpoints } from "../src/endpoint.ts";
 import { OpenboxSchemaRegistry } from "../src/registry.ts";
 
@@ -20,11 +20,6 @@ const FormFileSchema = Type.Unsafe<File | Blob>({
 
 TypeRegistry.Set(FormFileSchema[Kind], (_, value) => value instanceof File || value instanceof Blob);
 
-export const DateTime = Type.Unsafe<Date>(
-  Type.Transform(NonEmptyString({ format: "date-time" }))
-    .Decode((value) => new Date(value))
-    .Encode((value) => value.toISOString()),
-);
 export const UserSchema = schemaRegistry.register(
   "User",
   Type.Object({
@@ -93,18 +88,11 @@ const alivezEndpoint = defineOpenboxEndpoint({
     200: {
       description: "OK",
       headers: {
-        "X-RateLimit-Limit": {
-          ...PosInt(),
-          description: "Request limit per hour.",
-        },
-        "X-RateLimit-Remaining": {
-          ...PosInt(),
-          description: "The number of requests left for the time window.",
-        },
-        "X-RateLimit-Reset": {
-          ...DateTime,
+        "X-RateLimit-Limit": PosInt({ description: "Request limit per hour." }),
+        "X-RateLimit-Remaining": PosInt({ description: "The number of requests left for the time window." }),
+        "X-RateLimit-Reset": DateTimeString({
           description: "The UTC date/time at which the current rate limit window resets.",
-        },
+        }),
       },
       content: {
         "text/plain": {
@@ -163,11 +151,11 @@ const updateUserByIdEndpoint = defineOpenboxJsonEndpoint({
     },
     query: {
       dryRun: Type.Boolean(),
-      dates: Maybe(Type.Array(DateTime)),
+      dates: Maybe(Type.Array(DateTimeString())),
     },
     headers: {
       "x-some-uuid": Type.String({ format: "uuid", description: "Some UUID" }),
-      "x-some-date": DateTime,
+      "x-some-date": DateTimeString(),
       "x-optional": Maybe(Type.String()),
     },
     body: UserSchema,
@@ -192,7 +180,7 @@ const replaceUserByIdEndpoint = defineOpenboxEndpoint({
     query: { dryRun: Type.Boolean() },
     headers: {
       "x-some-uuid": Type.String({ format: "uuid" }),
-      "x-some-date": DateTime,
+      "x-some-date": DateTimeString(),
     },
     body: {
       content: {
@@ -246,7 +234,7 @@ const uploadResumeEndpoint = defineOpenboxEndpoint({
     query: { dryRun: Type.Boolean() },
     headers: {
       "x-some-uuid": Type.String({ format: "uuid" }),
-      "x-some-date": DateTime,
+      "x-some-date": DateTimeString(),
     },
     body: {
       content: {
@@ -305,32 +293,35 @@ const userEndpoints = new OpenboxEndpoints(schemaRegistry)
     },
   });
 
-const jsonDocsEndpoint = defineOpenboxEndpoint({
+const openapiDocsEndpoint = defineOpenboxEndpoint({
   method: "get",
-  path: "/docs/openapi_v3.1.json",
-  summary: "OpenAPI specification in JSON",
+  path: "/docs/openapi_v3.1.{ext}",
+  summary: "OpenAPI specification",
+  request: {
+    params: {
+      ext: Type.Union([
+        Type.Literal("json"),
+        Type.Literal("yaml"),
+      ]),
+    },
+  },
   responses: {
     200: {
-      description: "OpenAPI specification in JSON",
+      description: "OpenAPI specification",
       content: {
         "application/json": {
           schema: Type.Unknown(),
         },
-      },
-    },
-  },
-});
-
-const yamlDocsEndpoint = defineOpenboxEndpoint({
-  method: "get",
-  path: "/docs/openapi_v3.1.yaml",
-  summary: "OpenAPI specification in YAML",
-  responses: {
-    200: {
-      description: "OpenAPI specification in YAML",
-      content: {
         "application/yaml": {
           schema: Type.Unknown(),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: {
+        "text/plain": {
+          schema: Type.String(),
         },
       },
     },
@@ -338,7 +329,6 @@ const yamlDocsEndpoint = defineOpenboxEndpoint({
 });
 
 export const docsEndpoints = new OpenboxEndpoints(schemaRegistry)
-  .endpoint(jsonDocsEndpoint)
-  .endpoint(yamlDocsEndpoint);
+  .endpoint(openapiDocsEndpoint);
 
 export const endpoints = probingEndpoints.merge(userEndpoints).merge(docsEndpoints);

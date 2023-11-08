@@ -506,12 +506,21 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
 
     const config = endpoint.config;
     const patternPath = path.replaceAll(/{([^}]+)}/g, ":$1");
+    let urlPattern: URLPattern | undefined = undefined;
+
+    if (path !== patternPath) {
+      try {
+        urlPattern = new URLPattern({ pathname: patternPath });
+      } catch (e) {
+        throw new Error("Invalid path pattern: " + patternPath, { cause: e });
+      }
+    }
 
     const route: OpenboxServerRoute = {
       config,
       path,
       mediaType,
-      urlPattern: path !== patternPath ? new URLPattern({ pathname: patternPath }) : undefined,
+      urlPattern,
       queryParams: endpoint.request.query,
       pathParams: endpoint.request.params,
       headerParams: endpoint.request.headers,
