@@ -1,6 +1,6 @@
 import { deferred } from "../../src/deps.test.ts";
 import { OpenboxRouter } from "../../src/server.ts";
-import { debugLog } from "./debug_log.ts";
+import { DefaultLogger as logger } from "../../src/deps.test.ts";
 
 export async function useTempDir() {
   const tempDir = await Deno.makeTempDir();
@@ -22,13 +22,13 @@ export async function useServer(router: OpenboxRouter<unknown>) {
       port: 0,
       signal: abortController.signal,
       onListen({ hostname, port }) {
-        debugLog?.(`Test server is up at http://${hostname}:${port}`);
+        logger.debug?.(`Test server is up at http://${hostname}:${port}`);
         portPromise.resolve(port);
       },
     }, async (request, connInfo) => {
-      debugLog?.("<<<", request.method, request.url, request.headers);
+      logger.debug?.("<<<", request.method, request.url, request.headers);
       const response = await router.handle(request, connInfo);
-      debugLog?.(">>>", response);
+      logger.debug?.(">>>", response);
       return response;
     });
 

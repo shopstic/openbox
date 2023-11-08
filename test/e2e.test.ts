@@ -3,10 +3,10 @@ import { assert, assertEquals, assertRejects, IsEqual } from "../src/deps.test.t
 import { Static } from "../src/deps.ts";
 import { MediaTypes } from "../src/runtime/media_type.ts";
 import { useCustomHttpClient } from "./helper/custom_http_client.ts";
-import { debugLog } from "./helper/debug_log.ts";
 import { endpoints, UserSchema } from "./helper/test_endpoints.ts";
 import { router as testRouter } from "./helper/test_router.ts";
 import { useServer } from "./helper/use_server.ts";
+import { DefaultLogger as logger } from "../src/deps.test.ts";
 
 type EnsureEqual<T, I> = IsEqual<T, I> extends true ? I : never;
 
@@ -44,12 +44,12 @@ Deno.test("e2e", async (t) => {
     const res = await api("/alivez").get();
 
     if (res.mediaType === MediaTypes.Json) {
-      debugLog?.("OK", checkType<{ isOk: boolean }>(res.data).isOk);
+      logger.debug?.("OK", checkType<{ isOk: boolean }>(res.data).isOk);
     } else {
-      debugLog?.("OK", checkType<"OK">(res.data));
+      logger.debug?.("OK", checkType<"OK">(res.data));
     }
 
-    debugLog?.("X-RateLimit-Limit", checkType<number>(res.headers["X-RateLimit-Limit"]));
+    logger.debug?.("X-RateLimit-Limit", checkType<number>(res.headers["X-RateLimit-Limit"]));
   });
 
   await t.step("GET /users/{id}", async () => {
@@ -213,7 +213,7 @@ Deno.test("e2e", async (t) => {
         checkType<string>(res.data.message);
       } catch (e) {
         if (e instanceof OpenboxClientUnexpectedResponseError) {
-          debugLog?.(e.body);
+          logger.debug?.(e.body);
         }
         throw e;
       }

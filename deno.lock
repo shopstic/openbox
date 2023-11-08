@@ -131,6 +131,7 @@
     "https://deno.land/x/utils@2.18.3/deps/std_streams.ts": "f5cd442e588e9625fedb1fb5af28996f041a1b184d429899b64b3b529797eff9",
     "https://deno.land/x/utils@2.18.3/deps/typebox.ts": "3265a769678708e62ed74ef08b68d76e77bfaf78ce1eaedd1073b069b20edbe2",
     "https://deno.land/x/utils@2.18.3/exec_utils.ts": "b34e28fbe90c4fa27e3fc9462fe9040011f9bce1c575035374dbb7ddb0fe306d",
+    "https://deno.land/x/utils@2.18.3/logger.ts": "3caf339022b37b0246c9340a4cdfcad46b64a5aa4d293cc0b509cc3c4e84b4ff",
     "https://deno.land/x/utils@2.18.3/typebox_utils.ts": "e492ef841af1e0fc20d0442148d11cd15f842fcd262434374974f97c9261f683",
     "https://esm.sh/type-plus@7.6.0": "8b1621275a6ac44b84cf93f5319d23cebdc5e0a58e353f5e95503c21e4e5b3c1",
     "https://esm.sh/v132/is-buffer@2.0.5/denonext/is-buffer.mjs": "87d027d2c668d773b7037bd49fc1c12ed6af26b9f176aacf338c7901237b8867",

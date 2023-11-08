@@ -4,8 +4,8 @@ import { toOpenapiSpecPaths } from "../../src/docs.ts";
 import { memoizePromise } from "../../src/runtime/utils.ts";
 import { OpenboxRouter } from "../../src/server.ts";
 import { OpenapiObject } from "../../src/types/openapi_spec.ts";
-import { debugLog } from "./debug_log.ts";
 import { endpoints, schemaRegistry, UserSchema } from "./test_endpoints.ts";
+import { DefaultLogger as logger } from "../../src/deps.test.ts";
 
 function createOpenapiSpec() {
   return {
@@ -27,8 +27,8 @@ const memoizedOpenapiSpecYaml = memoizePromise(async () => {
 
 export const router = new OpenboxRouter({ endpoints })
   .path("/users/{id}").get.empty(({ params, connInfo }, respond) => {
-    debugLog?.("connInfo", connInfo);
-    debugLog?.("param: id", params.id);
+    logger.debug?.("connInfo", connInfo);
+    logger.debug?.("param: id", params.id);
 
     const responseBody: Static<typeof UserSchema> = {
       id: 123,
@@ -44,24 +44,24 @@ export const router = new OpenboxRouter({ endpoints })
     return respond(200).json(responseBody);
   })
   .path("/users/{id}").put.json(({ params, query, headers, body, connInfo }, respond) => {
-    debugLog?.("remoteAddr", connInfo.remoteAddr);
-    debugLog?.("param: id", params.id);
-    debugLog?.("query: dryRun", query.dryRun);
-    debugLog?.("query: dates", query.dates);
-    debugLog?.("header: X-Some-UUID", headers["x-some-uuid"]);
-    debugLog?.("header: X-Some-Date", headers["x-some-date"].toLocaleString());
-    debugLog?.("body", body.id, body.age, body.name, body.gender);
+    logger.debug?.("remoteAddr", connInfo.remoteAddr);
+    logger.debug?.("param: id", params.id);
+    logger.debug?.("query: dryRun", query.dryRun);
+    logger.debug?.("query: dates", query.dates);
+    logger.debug?.("header: X-Some-UUID", headers["x-some-uuid"]);
+    logger.debug?.("header: X-Some-Date", headers["x-some-date"].toLocaleString());
+    logger.debug?.("body", body.id, body.age, body.name, body.gender);
 
     return respond(200)
       .headers({ "some-extra-stuff": "here" })
       .json(body);
   })
   .path("/users/{id}").post.json(({ params, query, headers, body, connInfo }, respond) => {
-    debugLog?.("remoteAddr", connInfo.remoteAddr);
-    debugLog?.("param: id", params.id);
-    debugLog?.("query: dryRun", query.dryRun);
-    debugLog?.("headers", headers);
-    debugLog?.("body", body.id, body.age, body.name, body.gender);
+    logger.debug?.("remoteAddr", connInfo.remoteAddr);
+    logger.debug?.("param: id", params.id);
+    logger.debug?.("query: dryRun", query.dryRun);
+    logger.debug?.("headers", headers);
+    logger.debug?.("body", body.id, body.age, body.name, body.gender);
 
     if (params.id > 500) {
       return respond(404).json({
@@ -75,12 +75,12 @@ export const router = new OpenboxRouter({ endpoints })
       .json(body);
   })
   .path("/resume").post.urlEncoded(({ body }, respond) => {
-    debugLog?.("application/x-www-form-urlencoded", body);
+    logger.debug?.("application/x-www-form-urlencoded", body);
 
     return respond(200).text("Good");
   })
   .path("/resume").post.form(({ body }, respond) => {
-    debugLog?.("resumeFile", body.resumeFile);
+    logger.debug?.("resumeFile", body.resumeFile);
 
     return respond(413).json({
       error: true,
@@ -100,12 +100,12 @@ export const router = new OpenboxRouter({ endpoints })
     // .text("OK");
   })
   .path("/healthz").get.empty(({ connInfo }, respond) => {
-    debugLog?.("connInfo", connInfo);
+    logger.debug?.("connInfo", connInfo);
 
     return respond(200).text("");
   })
   .path("/download/{fileName}.pdf").get.empty(async ({ params }, respond) => {
-    debugLog?.("fileName", params.fileName);
+    logger.debug?.("fileName", params.fileName);
 
     const file = await fetch("https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf");
     assertExists(file.body);

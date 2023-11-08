@@ -5,9 +5,9 @@ import { defineOpenboxEndpoint, OpenboxEndpoints } from "../src/endpoint.ts";
 import { OpenboxSchemaRegistry } from "../src/registry.ts";
 import { PartReader } from "../src/runtime/streaming_multipart_reader.ts";
 import { OpenboxRouter, streamingMultipartFormData } from "../src/server.ts";
-import { debugLog } from "./helper/debug_log.ts";
 import { FormFileSchema } from "./helper/test_endpoints.ts";
 import { useServer } from "./helper/use_server.ts";
+import { DefaultLogger as logger } from "../src/deps.test.ts";
 
 /* {
   bytes: number;
@@ -106,7 +106,7 @@ async function readPartWithLimit(reader: PartReader, limitBytes: number): Promis
     total += ret;
 
     if (total > limitBytes) {
-      debugLog?.("total too big", total, "canceling");
+      logger.debug?.("total too big", total, "canceling");
       return {
         bytes: total,
         exceeddedLimit: true,
