@@ -2,6 +2,17 @@ import { deferred } from "../../src/deps.test.ts";
 import { OpenboxRouter } from "../../src/server.ts";
 import { debugLog } from "./debug_log.ts";
 
+export async function useTempDir() {
+  const tempDir = await Deno.makeTempDir();
+
+  return {
+    dir: tempDir,
+    async [Symbol.asyncDispose]() {
+      await Deno.remove(tempDir, { recursive: true });
+    },
+  };
+}
+
 export async function useServer(router: OpenboxRouter<unknown>) {
   const portPromise = deferred<number>();
   const abortController = new AbortController();
