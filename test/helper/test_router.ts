@@ -1,6 +1,6 @@
 import { stringifyYaml } from "../../src/deps.test.ts";
 import { assertExists, Static } from "../../src/deps.ts";
-import { toOpenapiSpecPaths } from "../../src/docs.ts";
+import { toOpenapiSpecPaths, toOpenapiSpecSchemas } from "../../src/docs.ts";
 import { memoizePromise } from "../../src/runtime/utils.ts";
 import { OpenboxRouter } from "../../src/server.ts";
 import { OpenapiObject } from "../../src/types/openapi_spec.ts";
@@ -15,7 +15,7 @@ function createOpenapiSpec() {
     },
     openapi: "3.1.0",
     paths: toOpenapiSpecPaths(schemaRegistry, endpoints),
-    components: schemaRegistry.toSpecSchemas(),
+    components: toOpenapiSpecSchemas(schemaRegistry),
   } satisfies OpenapiObject;
 }
 

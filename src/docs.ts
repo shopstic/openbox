@@ -1,6 +1,6 @@
 import { TSchema, TypeGuard } from "./deps.ts";
 import { OpenboxEndpoints } from "./endpoint.ts";
-import { OpenboxSchemaRegistry } from "./registry.ts";
+import { OPENBOX_REGISTRY_ID_PREFIX, OpenboxSchemaRegistry } from "./registry.ts";
 import {
   ContentObject,
   ParameterLocation,
@@ -45,6 +45,15 @@ function toParameters(
   });
 }
 
+export function toOpenapiSpecSchemas(registry: OpenboxSchemaRegistry) {
+  return {
+    schemas: Object.fromEntries(
+      Array.from(registry.map).map((
+        [id, { $id: _, ...schema }],
+      ) => [id.slice(OPENBOX_REGISTRY_ID_PREFIX.length), schema]),
+    ),
+  };
+}
 export function toOpenapiSpecPaths(
   schemaRegistry: OpenboxSchemaRegistry,
   endpoints: OpenboxEndpoints<unknown>,

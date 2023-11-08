@@ -1,13 +1,9 @@
 import { TRef, TSchema, Type, TypeCompiler, TypeGuard, Value } from "./deps.ts";
 
-const PREFIX = "#/components/schemas/";
+export const OPENBOX_REGISTRY_ID_PREFIX = "#/components/schemas/";
 
 function prefixId(id: string) {
-  return `${PREFIX}${id}`;
-}
-
-function unprefixId(id: string) {
-  return id.slice(PREFIX.length);
+  return `${OPENBOX_REGISTRY_ID_PREFIX}${id}`;
 }
 
 export class OpenboxSchemaRegistry {
@@ -61,11 +57,5 @@ export class OpenboxSchemaRegistry {
     }
 
     return schema;
-  }
-
-  toSpecSchemas() {
-    return {
-      schemas: Object.fromEntries(Array.from(this.map).map(([id, { $id: _, ...schema }]) => [unprefixId(id), schema])),
-    };
   }
 }
