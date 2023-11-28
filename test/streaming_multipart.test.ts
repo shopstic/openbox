@@ -1,6 +1,7 @@
 import { createOpenboxClient } from "../src/client.ts";
 import { assertStringIncludes, deferred } from "../src/deps.test.ts";
-import { assert, assertEquals, assertGreater, assertLess, Static, Type } from "../src/deps.ts";
+import { assert, Static, Type } from "../src/deps.ts";
+import { assertEquals, assertGreater, assertLess } from "../src/deps.test.ts";
 import { defineOpenboxEndpoint, OpenboxEndpoints } from "../src/endpoint.ts";
 import { OpenboxSchemaRegistry } from "../src/registry.ts";
 import { PartReader } from "../src/runtime/streaming_multipart_reader.ts";

@@ -1,4 +1,4 @@
-import { AssertionError } from "../deps.ts";
+import { AssertionError } from "../deps.test.ts";
 
 export function memoizePromise<T>(create: () => Promise<T>): typeof create {
   let memoized: Promise<T> | null = null;

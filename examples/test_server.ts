@@ -1,5 +1,6 @@
 import { stringifyYaml } from "../src/deps.test.ts";
-import { assertExists, Static } from "../src/deps.ts";
+import { Static } from "../src/deps.ts";
+import { assertExists } from "../src/deps.test.ts";
 import { toOpenapiSpecPaths, toOpenapiSpecSchemas } from "../src/docs.ts";
 import { memoizePromise } from "../src/runtime/utils.ts";
 import { OpenboxRouter } from "../src/server.ts";
