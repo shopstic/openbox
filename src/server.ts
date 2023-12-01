@@ -14,7 +14,14 @@ import { OpenboxParam, parseParam } from "./runtime/param.ts";
 import { OpenboxBodySchema } from "./runtime/request.ts";
 import { assertUnreachable } from "./runtime/utils.ts";
 import { OpenboxRouteConfig, OpenboxRouteMethod } from "./types/spec.ts";
-import { EmptyObject, ExtractEndpointsByPath, MaybeRecord, NotLiterallyString, TypedResponse } from "./types/utils.ts";
+import {
+  EmptyObject,
+  ExtractEndpointsByPath,
+  MaybeRecord,
+  NotLiterallyString,
+  OmitNeverValues,
+  TypedResponse,
+} from "./types/utils.ts";
 
 export interface OpenboxServerRequestContext<P, Q, H, B> {
   url: URL;
@@ -362,7 +369,7 @@ function withPath<
     type ReqMediaTypes = Extract<keyof ReqBodyMap, string>;
     type RequestContextByMediaType<M> = M extends ReqMediaTypes
       ? TypeBag extends OpenboxEndpointTypeBag<infer P, infer Q, infer H>
-        ? OpenboxServerRequestContext<P, Q, H, ReqBodyMap[M]>
+        ? OmitNeverValues<OpenboxServerRequestContext<P, Q, H, ReqBodyMap[M]>>
       : never
       : never;
 
