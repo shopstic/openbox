@@ -1,5 +1,5 @@
-export * from "https://deno.land/x/utils@2.18.3/deps/typebox.ts";
-export * from "https://deno.land/x/utils@2.18.3/typebox_utils.ts";
+export * from "https://deno.land/x/utils@2.18.4/deps/typebox.ts";
+export * from "https://deno.land/x/utils@2.18.4/typebox_utils.ts";
 export { BufReader, type ReadLineResult } from "https://deno.land/std@0.205.0/io/buf_reader.ts";
 export { assert } from "https://deno.land/std@0.205.0/assert/assert.ts";
 export { equals } from "https://deno.land/std@0.205.0/bytes/equals.ts";
