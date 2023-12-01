@@ -1,4 +1,4 @@
-import { Kind, readerFromStreamReader, TransformDecodeCheckError, TSchema, Type } from "./deps.ts";
+import { Kind, readerFromStreamReader, Static, TransformDecodeCheckError, TSchema, Type } from "./deps.ts";
 import {
   ExtractRequestBodyByMediaMap,
   OpenboxEndpointResponseByStatusMap,
@@ -38,18 +38,52 @@ export class RawResponse extends Response {
 
 type MaybePromise<T> = Promise<T> | T;
 
-enum OpenboxRequestErrorSource {
-  Params = "params",
-  Query = "query",
-  Headers = "headers",
-  Body = "body",
-}
+export const OpenboxRequestErrorSourceSchema = Type.Union([
+  Type.Literal("params"),
+  Type.Literal("query"),
+  Type.Literal("headers"),
+  Type.Literal("body"),
+]);
 
-enum OpenboxRequestErrorType {
-  ProtocolValidation = "protocolValidation",
-  SchemaValidation = "schemaValidation",
-  Internal = "internal",
-}
+export type OpenboxRequestErrorSource = Static<typeof OpenboxRequestErrorSourceSchema>;
+
+const SchemaValidationErrorTypeSchema = Type.Literal("schemaValidation");
+const ProtocolValidationErrorTypeSchema = Type.Literal("protocolValidation");
+const InternalErrorTypeSchema = Type.Literal("internal");
+
+export const OpenboxRequestErrorTypeSchema = Type.Union([
+  SchemaValidationErrorTypeSchema,
+  ProtocolValidationErrorTypeSchema,
+  InternalErrorTypeSchema,
+]);
+
+export type OpenboxRequestErrorType = Static<typeof OpenboxRequestErrorTypeSchema>;
+
+export const OpenboxSchemaValidationErrorSchema = Type.Object({
+  type: SchemaValidationErrorTypeSchema,
+  message: Type.String(),
+  source: OpenboxRequestErrorSourceSchema,
+  error: Type.Unknown(),
+  name: Type.Optional(Type.String()),
+});
+
+type OpenboxSchemaValidationError = Static<typeof OpenboxSchemaValidationErrorSchema>;
+
+export const OpenboxProtocolValidationErrorSchema = Type.Object({
+  type: ProtocolValidationErrorTypeSchema,
+  message: Type.Optional(Type.String()),
+  source: OpenboxRequestErrorSourceSchema,
+  name: Type.Optional(Type.String()),
+});
+
+type OpenboxProtocolValidationError = Static<typeof OpenboxProtocolValidationErrorSchema>;
+
+export const OpenboxInternalErrorSchema = Type.Object({
+  type: InternalErrorTypeSchema,
+  message: Type.String(),
+});
+
+type OpenboxInternalError = Static<typeof OpenboxInternalErrorSchema>;
 
 type OpenboxServerRouteHandler = (
   request: OpenboxServerRequestContext<unknown, unknown, unknown, unknown>,
@@ -69,14 +103,14 @@ type OpenboxServerRoute = {
   handler: OpenboxServerRouteHandler;
 };
 
-type OpenboxServerErrorHandler = (
+export type OpenboxServerErrorHandler = (
   source: OpenboxRequestErrorSource,
   type: OpenboxRequestErrorType,
   error: unknown,
   name?: string,
 ) => Response;
 
-type OpenboxServerNotFoundHandler = (
+export type OpenboxServerNotFoundHandler = (
   request: Request,
   connInfo: Deno.ServeHandlerInfo,
 ) => Response;
@@ -88,7 +122,7 @@ export const createOpenboxDefaultErrorHandler = (log?: (...args: unknown[]) => v
   error: unknown,
   name?: string,
 ) => {
-  if (type === OpenboxRequestErrorType.SchemaValidation) {
+  if (type === "schemaValidation") {
     return new Response(
       JSON.stringify(
         {
@@ -97,7 +131,7 @@ export const createOpenboxDefaultErrorHandler = (log?: (...args: unknown[]) => v
           source,
           error,
           ...(name !== undefined ? { name } : {}),
-        },
+        } satisfies OpenboxSchemaValidationError,
         null,
         2,
       ),
@@ -110,7 +144,7 @@ export const createOpenboxDefaultErrorHandler = (log?: (...args: unknown[]) => v
     );
   }
 
-  if (type === OpenboxRequestErrorType.ProtocolValidation) {
+  if (type === "protocolValidation") {
     const underlyingCause = (error instanceof Error) ? error.cause : undefined;
 
     if (underlyingCause) {
@@ -134,7 +168,7 @@ export const createOpenboxDefaultErrorHandler = (log?: (...args: unknown[]) => v
           source,
           ...(error instanceof Error ? { message: error.message } : {}),
           ...(name !== undefined ? { name } : {}),
-        },
+        } satisfies OpenboxProtocolValidationError,
         null,
         2,
       ),
@@ -147,14 +181,22 @@ export const createOpenboxDefaultErrorHandler = (log?: (...args: unknown[]) => v
     );
   }
 
-  if (type === OpenboxRequestErrorType.Internal) {
+  if (type === "internal") {
     log?.("Internal server error", "type:", type, "source:", source, "name:", name, "error:", error);
-    return new Response("Internal server error", {
-      status: 500,
-      headers: {
-        "Content-Type": MediaTypes.Text,
+    return new Response(
+      JSON.stringify(
+        {
+          type,
+          message: "Internal server error",
+        } satisfies OpenboxInternalError,
+      ),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": MediaTypes.Json,
+        },
       },
-    });
+    );
   }
 
   assertUnreachable(type);
@@ -615,15 +657,15 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
         } catch (e) {
           if (e instanceof TransformDecodeCheckError) {
             return errorHandler(
-              OpenboxRequestErrorSource.Params,
-              OpenboxRequestErrorType.SchemaValidation,
+              "params",
+              "schemaValidation",
               e.error,
               param.name,
             );
           }
           return errorHandler(
-            OpenboxRequestErrorSource.Params,
-            OpenboxRequestErrorType.Internal,
+            "params",
+            "internal",
             e,
             param.name,
           );
@@ -640,15 +682,15 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
         } catch (e) {
           if (e instanceof TransformDecodeCheckError) {
             return errorHandler(
-              OpenboxRequestErrorSource.Query,
-              OpenboxRequestErrorType.SchemaValidation,
+              "query",
+              "schemaValidation",
               e.error,
               param.name,
             );
           }
           return errorHandler(
-            OpenboxRequestErrorSource.Query,
-            OpenboxRequestErrorType.Internal,
+            "query",
+            "internal",
             e,
             param.name,
           );
@@ -665,15 +707,15 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
         } catch (e) {
           if (e instanceof TransformDecodeCheckError) {
             return errorHandler(
-              OpenboxRequestErrorSource.Headers,
-              OpenboxRequestErrorType.SchemaValidation,
+              "headers",
+              "schemaValidation",
               e.error,
               param.name,
             );
           }
           return errorHandler(
-            OpenboxRequestErrorSource.Headers,
-            OpenboxRequestErrorType.Internal,
+            "headers",
+            "internal",
             e,
             param.name,
           );
@@ -703,8 +745,8 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
               ((boundary = boundaryParam.substring(MultipartBoundaryPrefix.length)) && boundary.length === 0)
             ) {
               return errorHandler(
-                OpenboxRequestErrorSource.Headers,
-                OpenboxRequestErrorType.ProtocolValidation,
+                "headers",
+                "protocolValidation",
                 new Error("Invalid multipart/form-data boundary"),
                 ContentType,
               );
@@ -721,8 +763,8 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
         }
       } catch (cause) {
         return errorHandler(
-          OpenboxRequestErrorSource.Body,
-          OpenboxRequestErrorType.ProtocolValidation,
+          "body",
+          "protocolValidation",
           new Error(`Invalid body for content-type ${requestContentType}`, {
             cause,
           }),
@@ -739,14 +781,14 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
         } catch (e) {
           if (e instanceof TransformDecodeCheckError) {
             return errorHandler(
-              OpenboxRequestErrorSource.Body,
-              OpenboxRequestErrorType.SchemaValidation,
+              "body",
+              "schemaValidation",
               e.error,
             );
           }
           return errorHandler(
-            OpenboxRequestErrorSource.Body,
-            OpenboxRequestErrorType.Internal,
+            "body",
+            "internal",
             e,
           );
         }

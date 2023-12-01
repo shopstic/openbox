@@ -2,7 +2,7 @@ import { DateTimeString, Kind, Maybe, PosInt, Type, TypeRegistry } from "../src/
 import { defineOpenboxEndpoint, defineOpenboxJsonEndpoint, OpenboxEndpoints } from "../src/endpoint.ts";
 import { OpenboxSchemaRegistry } from "../src/registry.ts";
 
-export const schemaRegistry = new OpenboxSchemaRegistry();
+export const schemaRegistry = OpenboxSchemaRegistry.default;
 
 const BinaryReadableStream = Type.Unsafe<ReadableStream<Uint8Array>>({
   [Kind]: "BinaryReadableStream",

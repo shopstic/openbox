@@ -7,6 +7,8 @@ function prefixId(id: string) {
 }
 
 export class OpenboxSchemaRegistry {
+  static default = new OpenboxSchemaRegistry();
+
   constructor(readonly map: Map<string, TSchema> = new Map<string, TSchema>()) {}
 
   merge(registry: OpenboxSchemaRegistry) {

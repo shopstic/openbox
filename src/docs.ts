@@ -1,6 +1,12 @@
 import { TSchema, TypeGuard } from "./deps.ts";
 import { OpenboxEndpoints } from "./endpoint.ts";
 import { OPENBOX_REGISTRY_ID_PREFIX, OpenboxSchemaRegistry } from "./registry.ts";
+import { MediaTypes } from "./runtime/media_type.ts";
+import {
+  OpenboxInternalErrorSchema,
+  OpenboxProtocolValidationErrorSchema,
+  OpenboxSchemaValidationErrorSchema,
+} from "./server.ts";
 import {
   ContentObject,
   ParameterLocation,
@@ -52,6 +58,32 @@ export function toOpenapiSpecSchemas(registry: OpenboxSchemaRegistry) {
         [id, { $id: _, ...schema }],
       ) => [id.slice(OPENBOX_REGISTRY_ID_PREFIX.length), schema]),
     ),
+    responses: {
+      422: {
+        description: "Request schema validation error",
+        content: {
+          [MediaTypes.Json]: {
+            schema: OpenboxSchemaValidationErrorSchema,
+          },
+        },
+      },
+      400: {
+        description: "Request protocol validation error",
+        content: {
+          [MediaTypes.Json]: {
+            schema: OpenboxProtocolValidationErrorSchema,
+          },
+        },
+      },
+      500: {
+        description: "Internal server error",
+        content: {
+          [MediaTypes.Json]: {
+            schema: OpenboxInternalErrorSchema,
+          },
+        },
+      },
+    },
   };
 }
 export function toOpenapiSpecPaths(
@@ -121,7 +153,18 @@ export function toOpenapiSpecPaths(
               },
             }
             : {},
-          responses,
+          responses: {
+            422: {
+              "$ref": "#/components/responses/422",
+            },
+            400: {
+              "$ref": "#/components/responses/400",
+            },
+            500: {
+              "$ref": "#/components/responses/500",
+            },
+            ...responses,
+          },
         };
       }
 
