@@ -1,14 +1,14 @@
 import { createOpenboxClient } from "../src/client.ts";
-import { assertStringIncludes, deferred } from "../src/deps.test.ts";
-import { assert, Static, Type } from "../src/deps.ts";
+import { assert, assertStringIncludes, deferred } from "../src/deps.test.ts";
 import { assertEquals, assertGreater, assertLess } from "../src/deps.test.ts";
 import { defineOpenboxEndpoint, OpenboxEndpoints } from "../src/endpoint.ts";
 import { OpenboxSchemaRegistry } from "../src/registry.ts";
 import { PartReader } from "../src/runtime/streaming_multipart_reader.ts";
 import { OpenboxRouter, streamingMultipartFormData } from "../src/server.ts";
 import { FormFileSchema } from "./helper/test_endpoints.ts";
-import { useServer } from "./helper/use_server.ts";
+import { useTestServer } from "./helper/use_test_server.ts";
 import { DefaultLogger as logger } from "../src/deps.test.ts";
+import { Static, Type } from "../src/deps/typebox.ts";
 
 /* {
   bytes: number;
@@ -148,7 +148,7 @@ Deno.test("streaming multipart", async (t) => {
     })
     .complete({});
 
-  await using server = await useServer(router);
+  await using server = await useTestServer(router);
 
   const api = createOpenboxClient({
     baseUrl: `http://localhost:${server.port}`,

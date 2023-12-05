@@ -15,10 +15,10 @@ import type {
 import { IsEmptyObject, MaybeRecord, OmitEmptyObjectValues, OmitNeverValues, Simplify } from "./types/utils.ts";
 import { TypedResponseUnion } from "./types/typed_response.ts";
 import { OpenboxRouteConfig, OpenboxRouteMethod } from "./types/spec.ts";
-import { TSchema } from "./deps.ts";
 import { OpenboxParam } from "./runtime/param.ts";
 import { ResponseByStatusMap } from "./types/response.ts";
 import { OpenboxSchemaRegistry } from "./registry.ts";
+import { TSchema } from "./deps/typebox.ts";
 
 export type OpenboxJsonRouteConfig<P extends string = string> =
   & Pick<OpenboxRouteConfig, "method" | "summary" | "tags" | "description">

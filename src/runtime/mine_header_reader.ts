@@ -1,6 +1,6 @@
 // Inspired by the deprecated/removed std/textproto module
 
-import { BufReader, concat, ReadLineResult } from "../deps.ts";
+import { BufReader, concat, ReadLineResult } from "../deps/std.ts";
 
 // Constants created for DRY
 const CHAR_SPACE: number = " ".charCodeAt(0);

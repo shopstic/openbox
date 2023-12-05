@@ -1,12 +1,12 @@
 import { createOpenboxClient, OpenboxClientUnexpectedResponseError } from "../src/client.ts";
 import { assert, assertEquals, assertRejects, IsEqual } from "../src/deps.test.ts";
-import { Static } from "../src/deps.ts";
 import { MediaTypes } from "../src/runtime/media_type.ts";
 import { useCustomHttpClient } from "./helper/custom_http_client.ts";
 import { endpoints, UserSchema } from "./helper/test_endpoints.ts";
 import { router as testRouter } from "./helper/test_router.ts";
-import { useServer } from "./helper/use_server.ts";
+import { useTestServer } from "./helper/use_test_server.ts";
 import { DefaultLogger as logger } from "../src/deps.test.ts";
+import { Static } from "../src/deps/typebox.ts";
 
 type EnsureEqual<T, I> = IsEqual<T, I> extends true ? I : never;
 
@@ -15,7 +15,7 @@ function checkType<T, I extends T = T>(input: I): EnsureEqual<T, typeof input> {
 }
 
 Deno.test("e2e", async (t) => {
-  await using server = await useServer(testRouter);
+  await using server = await useTestServer(testRouter);
 
   using customClient = useCustomHttpClient();
 
@@ -165,10 +165,65 @@ Deno.test("e2e", async (t) => {
       params: {
         fileName: "foobar",
       },
+      query: {},
     });
 
     assertEquals((await res.response.arrayBuffer()).byteLength, 13264);
   });
+
+  // await t.step("GET /download/{fileName} with signal", async () => {
+  //   const abortedDeferred = deferred<void>();
+  //   await using usingServer = await useServer(async (request) => {
+  //     console.log("Got request!!!!!!!!!", request);
+  //     assertExists(request.signal);
+  //     assert(!request.signal.aborted);
+
+  //     request.signal?.addEventListener("abort", () => {
+  //       console.log("Got abort signal!!!!!!!!!!!!");
+  //       abortedDeferred.resolve();
+  //     }, { once: true });
+
+  //     const rs = ReadableStream.from<Uint8Array>((async function* () {
+  //       while (!request.signal.aborted) {
+  //         console.log(">>> sending data");
+  //         await delay(10, { signal: request.signal });
+  //         yield new TextEncoder().encode(Date.now().toString());
+  //       }
+  //       console.log("!!!END", request.signal.aborted);
+  //     })());
+
+  //     return new Response(rs);
+  //   });
+
+  //   const testDownloadUrl = `http://localhost:${usingServer.port}/download`;
+
+  //   const downloadFile = api("/download/{fileName}.pdf").get;
+  //   const abortController = new AbortController();
+
+  //   const res = await downloadFile({
+  //     params: {
+  //       fileName: "foobar",
+  //     },
+  //     query: {
+  //       fileUrl: testDownloadUrl,
+  //     },
+  //     signal: abortController.signal,
+  //   });
+
+  //   const bufPromise = res.response.arrayBuffer();
+
+  //   await delay(200);
+  //   console.log("Before abort");
+  //   abortController.abort();
+  //   console.log("After abort");
+  //   await abortedDeferred;
+  //   console.log("After abortedDeferred");
+  //   try {
+  //     console.log("requestPromise", await bufPromise);
+  //   } catch (e) {
+  //     console.log("Caught", e);
+  //   }
+  // });
 
   await t.step("POST /resume", async (tt) => {
     const body = {

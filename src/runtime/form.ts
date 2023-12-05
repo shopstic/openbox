@@ -1,4 +1,4 @@
-import { TObject, TProperties, TSchema, TypeGuard } from "../deps.ts";
+import { TObject, TProperties, TSchema, TypeGuard } from "../deps/typebox.ts";
 import { OpenboxSchemaRegistry } from "../registry.ts";
 import { createParamInfo, OpenboxParam, parseParam } from "./param.ts";
 

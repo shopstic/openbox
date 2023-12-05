@@ -1,11 +1,11 @@
 import { assertExists, stringifyYaml } from "../../src/deps.test.ts";
-import { Static } from "../../src/deps.ts";
 import { toOpenapiSpecPaths, toOpenapiSpecSchemas } from "../../src/docs.ts";
 import { memoizePromise } from "../../src/runtime/utils.ts";
 import { OpenboxRouter } from "../../src/server.ts";
 import { OpenapiObject } from "../../src/types/openapi_spec.ts";
 import { endpoints, schemaRegistry, UserSchema } from "./test_endpoints.ts";
 import { DefaultLogger as logger } from "../../src/deps.test.ts";
+import { Static } from "../../src/deps/typebox.ts";
 
 function createOpenapiSpec() {
   return {
@@ -104,16 +104,28 @@ export const router = new OpenboxRouter({ endpoints })
 
     return respond(200).text("");
   })
-  .path("/download/{fileName}.pdf").get.empty(async ({ params }, respond) => {
-    logger.debug?.("fileName", params.fileName);
+  .path("/download/{fileName}.pdf").get.empty(
+    async (
+      {
+        params,
+        query: { fileUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+        signal,
+      },
+      respond,
+    ) => {
+      logger.debug?.("fileName", params.fileName);
+      logger.debug?.("fileUrl", fileUrl);
 
-    const file = await fetch("https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf");
-    assertExists(file.body);
+      const file = await fetch(fileUrl, {
+        signal,
+      });
+      assertExists(file.body);
 
-    return respond(200)
-      .headers({ "some-extra-stuff": "here" })
-      .media("application/pdf")(file.body);
-  })
+      return respond(200)
+        .headers({ "some-extra-stuff": "here" })
+        .media("application/pdf")(file.body);
+    },
+  )
   .path("/docs/openapi_v3.1.{ext}").get.empty(async ({ params: { ext } }, respond) => {
     if (ext === "json") {
       return respond(200)

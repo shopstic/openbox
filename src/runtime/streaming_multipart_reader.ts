@@ -1,6 +1,7 @@
 // Inspired by the deprecated/removed std/mime module
 
-import { assert, BufReader, equals, indexOfNeedle, lastIndexOfNeedle, startsWith } from "../deps.ts";
+import { assert } from "../deps.test.ts";
+import { BufReader, equals, indexOfNeedle, lastIndexOfNeedle, startsWith } from "../deps/std.ts";
 import { MineHeaderReader } from "./mine_header_reader.ts";
 
 const encoder = new TextEncoder();

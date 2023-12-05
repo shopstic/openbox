@@ -1,4 +1,4 @@
-import { TRef, TSchema, Type, TypeCompiler, TypeGuard, Value } from "./deps.ts";
+import { TRef, TSchema, Type, TypeCompiler, TypeGuard, Value } from "./deps/typebox.ts";
 
 export const OPENBOX_REGISTRY_ID_PREFIX = "#/components/schemas/";
 

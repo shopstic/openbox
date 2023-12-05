@@ -1,4 +1,4 @@
-import { TSchema, TypeGuard } from "./deps.ts";
+import { TSchema, TypeGuard } from "./deps/typebox.ts";
 import { OpenboxEndpoints } from "./endpoint.ts";
 import { OPENBOX_REGISTRY_ID_PREFIX, OpenboxSchemaRegistry } from "./registry.ts";
 import { MediaTypes } from "./runtime/media_type.ts";

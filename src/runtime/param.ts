@@ -1,6 +1,6 @@
 // Inspired by https://github.com/jtlapp/typebox-form-parser
 
-import { TArray, TSchema, TUnion, TypeCheck, TypeGuard } from "../deps.ts";
+import { TArray, TSchema, TUnion, TypeCheck, TypeGuard } from "../deps/typebox.ts";
 import { OpenboxSchemaRegistry } from "../registry.ts";
 
 /**

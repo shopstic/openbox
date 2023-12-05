@@ -1,4 +1,4 @@
-import { readerFromStreamReader } from "../src/deps.ts";
+import { readerFromStreamReader } from "../src/deps/std.ts";
 import { StreamingMultipartReader } from "../src/runtime/streaming_multipart_reader.ts";
 
 await Deno

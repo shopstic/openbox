@@ -13,7 +13,7 @@ export async function useTempDir() {
   };
 }
 
-export async function useServer(router: OpenboxRouter<unknown>) {
+export async function useServer(handler: Deno.ServeHandler) {
   const portPromise = deferred<number>();
   const abortController = new AbortController();
 
@@ -25,12 +25,7 @@ export async function useServer(router: OpenboxRouter<unknown>) {
         logger.debug?.(`Test server is up at http://${hostname}:${port}`);
         portPromise.resolve(port);
       },
-    }, async (request, connInfo) => {
-      logger.debug?.("<<<", request.method, request.url, request.headers);
-      const response = await router.handle(request, connInfo);
-      logger.debug?.(">>>", response);
-      return response;
-    });
+    }, handler);
 
   return {
     port: await portPromise,
@@ -39,4 +34,13 @@ export async function useServer(router: OpenboxRouter<unknown>) {
       await server.finished;
     },
   };
+}
+
+export function useTestServer(router: OpenboxRouter<unknown>) {
+  return useServer(async (request, connInfo) => {
+    logger.debug?.("<<<", request.method, request.url, request.headers);
+    const response = await router.handle(request, connInfo);
+    logger.debug?.(">>>", response);
+    return response;
+  });
 }

@@ -1,5 +1,5 @@
 import { IsEmptyObject } from "./deps.test.ts";
-import { TransformDecodeCheckError, ValueError } from "./deps.ts";
+import { TransformDecodeCheckError, ValueError } from "./deps/typebox.ts";
 import {
   ExtractRequestBodyByMediaMap,
   OpenboxEndpoint,
@@ -30,6 +30,7 @@ interface OpenboxClientRequestContext<
   query: Q;
   headers: H;
   body: B;
+  signal?: AbortSignal;
 }
 
 export class ClientResponse<S extends number = number, M extends string = string, D = unknown, H = unknown>
@@ -217,6 +218,7 @@ async function openapiFetch({ baseUrl, pathTemplate, method, request, mediaType,
     headers: requestHeaders,
     // deno-lint-ignore no-explicit-any
     body: requestBody as any,
+    signal: request?.signal,
   });
 
   const { status: responseStatus, headers: responseHeaders } = response;

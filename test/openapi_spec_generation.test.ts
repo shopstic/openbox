@@ -1,4 +1,4 @@
-import { useServer, useTempDir } from "./helper/use_server.ts";
+import { useTempDir, useTestServer } from "./helper/use_test_server.ts";
 import { router } from "./helper/test_router.ts";
 import { createOpenboxClient } from "../src/client.ts";
 import { endpoints } from "./helper/test_endpoints.ts";
@@ -6,7 +6,7 @@ import { assertEquals, inheritExec, joinPath } from "../src/deps.test.ts";
 import { MediaTypes } from "../src/runtime/media_type.ts";
 
 Deno.test("OpenAPI spec generation", async (t) => {
-  await using server = await useServer(router);
+  await using server = await useTestServer(router);
 
   const api = createOpenboxClient({
     baseUrl: `http://localhost:${server.port}`,

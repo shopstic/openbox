@@ -1,4 +1,4 @@
-import { TypeGuard } from "../deps.ts";
+import { TypeGuard } from "../deps/typebox.ts";
 import { OpenboxSchemaRegistry } from "../registry.ts";
 import { OpenboxRouteConfig } from "../types/spec.ts";
 import { createParamInfo, OpenboxParam } from "./param.ts";

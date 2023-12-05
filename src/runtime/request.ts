@@ -1,4 +1,4 @@
-import { TSchema, TypeCheck, TypeGuard } from "../deps.ts";
+import { TSchema, TypeCheck, TypeGuard } from "../deps/typebox.ts";
 import { OpenboxSchemaRegistry } from "../registry.ts";
 import { OpenboxRouteConfig } from "../types/spec.ts";
 import { createOpenboxForm, OpenboxForm } from "./form.ts";

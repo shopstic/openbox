@@ -1,4 +1,4 @@
-import { TSchema } from "../deps.ts";
+import { TSchema } from "../deps/typebox.ts";
 import { EncodingObject, ExamplesObject, LinksObject, OperationObject } from "./openapi_spec.ts";
 
 export type OpenboxRouteMethod = "get" | "post" | "put" | "delete" | "patch";

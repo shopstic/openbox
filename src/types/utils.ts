@@ -1,4 +1,4 @@
-import { Static, TSchema } from "../deps.ts";
+import { Static, TSchema } from "../deps/typebox.ts";
 
 export type TypeboxInfer<T, Else = never> = T extends TSchema ? Static<T> : Else;
 

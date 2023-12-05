@@ -1,4 +1,3 @@
-import { Kind, readerFromStreamReader, Static, TransformDecodeCheckError, TSchema, Type } from "./deps.ts";
 import {
   ExtractRequestBodyByMediaMap,
   OpenboxEndpointResponseByStatusMap,
@@ -22,6 +21,8 @@ import {
   OmitNeverValues,
   TypedResponse,
 } from "./types/utils.ts";
+import { readerFromStreamReader } from "./deps/std.ts";
+import { Kind, Static, TransformDecodeCheckError, TSchema, Type } from "./deps/typebox.ts";
 
 export interface OpenboxServerRequestContext<P, Q, H, B> {
   url: URL;
@@ -30,6 +31,7 @@ export interface OpenboxServerRequestContext<P, Q, H, B> {
   headers: H;
   body: B;
   request: Request;
+  signal: AbortSignal;
   connInfo: Deno.ServeHandlerInfo;
 }
 
@@ -615,8 +617,7 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
   async handle(request: Request, connInfo: Deno.ServeHandlerInfo): Promise<Response> {
     const url = new URL(request.url);
     const pathname = url.pathname;
-    const headers = request.headers;
-    const method = request.method;
+    const { headers, method, signal } = request;
 
     const requestContentTypeParts = headers.get(ContentType)?.split(";", 2);
     const requestContentType = requestContentTypeParts?.[0].trim() ?? "";
@@ -809,6 +810,7 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
       headers: Object.fromEntries(validatedHeaders),
       body,
       request,
+      signal,
       connInfo,
     };
 

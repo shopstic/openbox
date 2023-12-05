@@ -1,4 +1,4 @@
-import { DateTimeString, Kind, Maybe, PosInt, Type, TypeRegistry } from "../../src/deps.ts";
+import { DateTimeString, Kind, Maybe, NonEmptyString, PosInt, Type, TypeRegistry } from "../../src/deps/typebox.ts";
 import { defineOpenboxEndpoint, defineOpenboxJsonEndpoint, OpenboxEndpoints } from "../../src/endpoint.ts";
 import { OpenboxSchemaRegistry } from "../../src/registry.ts";
 
@@ -278,7 +278,10 @@ const userEndpoints = new OpenboxEndpoints(schemaRegistry)
     summary: "Download a PDF file",
     request: {
       params: {
-        fileName: Type.String({ minLength: 1 }),
+        fileName: NonEmptyString(),
+      },
+      query: {
+        fileUrl: Maybe(NonEmptyString({ format: "uri" })),
       },
     },
     responses: {

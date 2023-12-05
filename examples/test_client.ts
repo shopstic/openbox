@@ -1,6 +1,6 @@
 import { ClientResponse, createOpenboxClient } from "../src/client.ts";
 import { IsEqual } from "../src/deps.test.ts";
-import { Static } from "../src/deps.ts";
+import { Static } from "../src/deps/typebox.ts";
 import { endpoints, UserSchema } from "./test_endpoints.ts";
 
 const testClient = createOpenboxClient({
