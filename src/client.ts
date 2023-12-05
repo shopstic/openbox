@@ -1,4 +1,3 @@
-import { IsEmptyObject } from "./deps.test.ts";
 import { TransformDecodeCheckError, ValueError } from "./deps/typebox.ts";
 import {
   ExtractRequestBodyByMediaMap,
@@ -19,6 +18,9 @@ import {
   OmitUndefinedValues,
   TypedResponse,
 } from "./types/utils.ts";
+
+// deno-lint-ignore ban-types
+type IsEmptyObject<T> = T extends {} ? ({} extends T ? true : false) : false;
 
 interface OpenboxClientRequestContext<
   P extends MaybeRecord = MaybeRecord,
