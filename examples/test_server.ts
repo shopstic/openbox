@@ -25,23 +25,23 @@ const memoizedOpenapiSpecYaml = memoizePromise(async () => {
   return stringifyYaml(JSON.parse(json));
 });
 
+const fakeUser: Static<typeof UserSchema> = {
+  id: 123,
+  age: 88,
+  gender: "female",
+  name: "test",
+  weapon: {
+    type: "b",
+    b: "whatever",
+  },
+};
+
 const router = new OpenboxRouter({ endpoints })
   .path("/users/{id}").get.empty(({ params, connInfo }, respond) => {
     console.log("connInfo", connInfo);
     console.log("param: id", params.id);
 
-    const responseBody: Static<typeof UserSchema> = {
-      id: 123,
-      age: 88,
-      gender: "female",
-      name: "test",
-      weapon: {
-        type: "b",
-        b: "whatever",
-      },
-    };
-
-    return respond(200).json(responseBody);
+    return respond(200).json(fakeUser);
   })
   .path("/users/{id}").put.json(({ params, query, headers, body, connInfo }, respond) => {
     console.log("remoteAddr", connInfo.remoteAddr);
@@ -134,6 +134,13 @@ const router = new OpenboxRouter({ endpoints })
     }
 
     return respond(404).text(`Unsupported file extension ${ext}`);
+  })
+  .path("/users/{id}").delete.empty(({ params: { id } }, respond) => {
+    if (id !== fakeUser.id) {
+      return respond(404).text("The user does not exist");
+    }
+
+    return respond(200).json(fakeUser);
   })
   .complete({});
 

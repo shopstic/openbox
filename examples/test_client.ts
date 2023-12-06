@@ -92,6 +92,22 @@ await testFetch("GET /users/{id}", async () => {
   return response;
 });
 
+await testFetch("DELETE /users/{id}", async () => {
+  const response = await testClient("/users/{id}").delete.empty({
+    params: {
+      id: 123,
+    },
+  });
+
+  if (response.status === 200) {
+    checkType(response.data.age);
+  } else if (response.status === 404) {
+    checkType<"The user does not exist">(response.data);
+  }
+
+  return response;
+});
+
 // await testFetch("GET /users/{id}", () =>
 //   testClient.get("/users/{id}")({
 //     params: {

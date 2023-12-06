@@ -226,6 +226,35 @@ const replaceUserByIdEndpoint = defineOpenboxEndpoint({
   },
 });
 
+const deleteUserByIdEndpoint = defineOpenboxEndpoint({
+  method: "delete",
+  path: "/users/{id}",
+  summary: "Delete a single user",
+  request: {
+    params: {
+      id: UserIdSchema,
+    },
+  },
+  responses: {
+    200: {
+      description: "Object with user data.",
+      content: {
+        "application/json": {
+          schema: UserSchema,
+        },
+      },
+    },
+    404: {
+      description: "The user does not exist",
+      content: {
+        "text/plain": {
+          schema: Type.Literal("The user does not exist"),
+        },
+      },
+    },
+  },
+});
+
 const uploadResumeEndpoint = defineOpenboxEndpoint({
   method: "post",
   path: "/resume",
@@ -270,6 +299,7 @@ const uploadResumeEndpoint = defineOpenboxEndpoint({
 const userEndpoints = new OpenboxEndpoints(schemaRegistry)
   .endpoint(updateUserByIdEndpoint)
   .endpoint(replaceUserByIdEndpoint)
+  .endpoint(deleteUserByIdEndpoint)
   .endpoint(getUserByIdEndpoint)
   .endpoint(uploadResumeEndpoint)
   .endpoint({

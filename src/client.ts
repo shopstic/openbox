@@ -448,6 +448,9 @@ function withRoutes<Routes>() {
 
       type WithoutBody = Method extends "get"
         ? SendWithOptionalArg<ExtractClientRequestArg<TypeBag, undefined>, Promise<Res>>
+        : ReqBodyMap extends never ? {
+            empty: SendWithOptionalArg<ExtractClientRequestArg<TypeBag, undefined>, Promise<Res>>;
+          }
         : EmptyObject;
 
       return {} as

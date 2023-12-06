@@ -158,6 +158,33 @@ Deno.test("e2e", async (t) => {
     });
   });
 
+  await t.step("DELETE /users/{id}", async (tt) => {
+    const deleteUser = api("/users/{id}").delete.empty;
+
+    async function deleteWithId(id: number) {
+      return await deleteUser({
+        params: {
+          id,
+        },
+      });
+    }
+
+    await tt.step("200", async () => {
+      const res = await deleteWithId(123);
+
+      assert(res.status === 200);
+      checkType<number>(res.data.age);
+      checkType<string>(res.data.name);
+    });
+
+    await tt.step("404", async () => {
+      const res = await deleteWithId(456);
+
+      assert(res.status === 404);
+      checkType<string>(res.data);
+    });
+  });
+
   await t.step("GET /download/{fileName}", async () => {
     const downloadFile = api("/download/{fileName}.pdf").get;
 
