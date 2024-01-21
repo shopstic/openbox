@@ -53,7 +53,11 @@ export class ClientResponse<S extends number = number, M extends string = string
 export class OpenboxClientUnexpectedResponseError extends Error {
   readonly name = OpenboxClientUnexpectedResponseError.name;
   constructor(readonly body: unknown, readonly response: Response) {
-    super(`Received an unexpected response with status=${response.status} ${response.statusText}`);
+    super(
+      `Received an unexpected response with status=${response.status} statusText=${response.statusText} contentType=${
+        response.headers.get("content-type")
+      }`,
+    );
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
