@@ -781,13 +781,15 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
         );
       }
 
+      body = untypedBody;
+
       if (bodySchema.check) {
         try {
-          if (bodySchema.form && untypedBody instanceof FormData) {
-            body = parseForm(bodySchema.form, untypedBody);
+          if (bodySchema.form && body instanceof FormData) {
+            body = parseForm(bodySchema.form, body);
           }
 
-          body = bodySchema.check.Decode(untypedBody);
+          body = bodySchema.check.Decode(body);
         } catch (e) {
           if (e instanceof TransformDecodeCheckError) {
             return errorHandler(
