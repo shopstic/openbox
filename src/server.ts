@@ -30,6 +30,7 @@ export interface OpenboxServerRequestContext<P, Q, H, B> {
   query: Q;
   headers: H;
   body: B;
+  untypedBody: unknown;
   request: Request;
   signal: AbortSignal;
   connInfo: Deno.ServeHandlerInfo;
@@ -731,18 +732,19 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
       }
     }
 
-    let body: unknown = request.body;
+    let untypedBody: unknown = request.body;
+    let body = untypedBody;
 
     if (
       bodySchema && request.body !== null && requestContentType.length > 0
     ) {
       try {
         if (requestContentType === MediaTypes.Json) {
-          body = await request.json();
+          untypedBody = await request.json();
         } else if (requestContentType === MediaTypes.Text) {
-          body = await request.text();
+          untypedBody = await request.text();
         } else if (requestContentType === MediaTypes.UrlEncoded) {
-          body = await request.formData();
+          untypedBody = await request.formData();
         } else if (requestContentType === MediaTypes.FormData) {
           if (bodySchema.schema[Kind] === OpenboxStreamingMultipartFormData.description) {
             const boundaryParam = requestContentTypeParts?.[1].trim();
@@ -764,9 +766,9 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
               readerFromStreamReader(request.body.getReader()),
               boundary,
             );
-            body = multipartReader.partReaders();
+            untypedBody = multipartReader.partReaders();
           } else {
-            body = await request.formData();
+            untypedBody = await request.formData();
           }
         }
       } catch (cause) {
@@ -781,11 +783,11 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
 
       if (bodySchema.check) {
         try {
-          if (bodySchema.form && body instanceof FormData) {
-            body = parseForm(bodySchema.form, body);
+          if (bodySchema.form && untypedBody instanceof FormData) {
+            body = parseForm(bodySchema.form, untypedBody);
           }
 
-          body = bodySchema.check.Decode(body);
+          body = bodySchema.check.Decode(untypedBody);
         } catch (e) {
           if (e instanceof TransformDecodeCheckError) {
             return errorHandler(
@@ -808,6 +810,7 @@ export class OpenboxRouter<Routes> implements RouteHandlerApi {
       params: Object.fromEntries(validatedParams),
       query: Object.fromEntries(validatedQuery),
       headers: Object.fromEntries(validatedHeaders),
+      untypedBody,
       body,
       request,
       signal,
