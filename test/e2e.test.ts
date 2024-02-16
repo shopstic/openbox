@@ -134,7 +134,7 @@ Deno.test("e2e", async (t) => {
       const error = await assertRejects(
         () => postWithId(9999),
         OpenboxClientUnexpectedResponseError,
-        "Received an unexpected response with status=422 Unprocessable Entity",
+        "Received an unexpected response with status=422 statusText=Unprocessable Entity contentType=application/json",
       );
 
       assertEquals(error.body, {

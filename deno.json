@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "update_cache": "rm -f ./deno.lock && deno cache ./src/deps.ts ./src/deps.test.ts",
+    "update_cache": "rm -f ./deno.lock && deno cache ./src/deps/*.ts ./src/deps.test.ts",
     "test": "deno test --unstable --check -A --parallel ./test",
     "lint": "deno lint",
     "check": "deno check **/*.ts"
