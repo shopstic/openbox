@@ -220,7 +220,7 @@ Deno.test("streaming multipart", async (t) => {
       if (e instanceof TypeError) {
         assertStringIncludes(
           e.message,
-          "request or response body error: error reading a body from connection: connection error",
+          "error writing a body to connection",
         );
       } else {
         throw e;
